@@ -33,6 +33,18 @@ st.markdown("""
     @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
     html, body, [class*="css"] { font-family: 'Plus Jakarta Sans', sans-serif; }
 
+    /* CSS Variables - overridden by theme block below */
+    :root {
+        --card-bg: #FFFFFF;
+        --card-border: #E2E8F0;
+        --card-shadow: 0 2px 12px rgba(0,0,0,0.04);
+        --card-text: #0F172A;
+        --card-sub: #475569;
+        --card-heading: #1E293B;
+        --circle-ring: #F1F5F9;
+        --divider: #F1F5F9;
+    }
+
     /* Tags */
     .tag { display: inline-block; padding: 5px 12px; border-radius: 9999px; font-size: 0.82rem; font-weight: 600; margin: 3px; }
     .tag-matched { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
@@ -44,18 +56,26 @@ st.markdown("""
         display: flex; align-items: center; justify-content: center;
         width: 130px; height: 130px; border-radius: 50%;
         margin: 0 auto 12px auto; font-size: 2rem; font-weight: 800;
+        box-shadow: inset 0 0 0 10px var(--circle-ring);
     }
 
-    /* Cards */
+    /* Cards - use CSS variables so dark mode can override */
     .metric-card {
-        border-radius: 14px; padding: 22px;
+        background: var(--card-bg);
+        border: 1px solid var(--card-border);
+        border-radius: 14px;
+        padding: 22px;
         margin-bottom: 14px;
+        box-shadow: var(--card-shadow);
         transition: transform 0.15s ease, box-shadow 0.15s ease;
+        color: var(--card-text);
     }
     .metric-card:hover { transform: translateY(-2px); }
+    .metric-card h4 { color: var(--card-heading) !important; margin-top: 0; }
+    .metric-card p  { color: var(--card-sub) !important; }
 
     /* Feedback rows */
-    .feedback-item { padding: 7px 0; }
+    .feedback-item { padding: 7px 0; border-bottom: 1px solid var(--divider); }
 </style>
 """, unsafe_allow_html=True)
 
@@ -109,30 +129,31 @@ if not st.session_state.logged_in:
                     "email": user_info["email"]
                 }
 
-# --- Dynamic Theme Styling ---
 _DARK = st.session_state.dark_mode
 
 if _DARK:
     _theme_css = """
     <style>
         /* === DARK THEME === */
-        .stApp { background-color: #0F172A !important; color: #F1F5F9 !important; }
+        :root {
+            --card-bg: #1E293B;
+            --card-border: #334155;
+            --card-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            --card-text: #F1F5F9;
+            --card-sub: #94A3B8;
+            --card-heading: #E2E8F0;
+            --circle-ring: #334155;
+            --divider: #334155;
+        }
+        .stApp { background-color: #0F172A !important; }
         section[data-testid="stSidebar"] {
             background-color: #1E293B !important;
             border-right: 1px solid #334155 !important;
         }
-        /* Cards */
-        .metric-card {
-            background: #1E293B !important;
-            border: 1px solid #334155 !important;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.3) !important;
-        }
-        /* All text */
-        h1, h2, h3, h4, h5, h6 { color: #F1F5F9 !important; }
-        p, label, li, span, small, div { color: #CBD5E1 !important; }
-        /* Score circle ring */
-        .score-circle { box-shadow: inset 0 0 0 10px #334155 !important; }
-        .feedback-item { border-bottom: 1px solid #334155 !important; }
+        /* Only colour Streamlit's own markdown text elements */
+        .stMarkdown h1, .stMarkdown h2, .stMarkdown h3,
+        .stMarkdown h4, .stMarkdown h5, .stMarkdown h6 { color: #F1F5F9 !important; }
+        .stMarkdown p, .stMarkdown li { color: #CBD5E1 !important; }
         /* Tabs */
         button[data-baseweb="tab"] { color: #94A3B8 !important; }
         button[data-baseweb="tab"][aria-selected="true"] {
@@ -145,15 +166,18 @@ else:
     _theme_css = """
     <style>
         /* === LIGHT THEME === */
+        :root {
+            --card-bg: #FFFFFF;
+            --card-border: #E2E8F0;
+            --card-shadow: 0 2px 12px rgba(0,0,0,0.04);
+            --card-text: #0F172A;
+            --card-sub: #475569;
+            --card-heading: #1E293B;
+            --circle-ring: #F1F5F9;
+            --divider: #F1F5F9;
+        }
         .stApp { background-color: #F8FAFC !important; }
         section[data-testid="stSidebar"] { background-color: #FFFFFF !important; }
-        .metric-card {
-            background: #FFFFFF !important;
-            border: 1px solid #E2E8F0 !important;
-            box-shadow: 0 2px 12px rgba(0,0,0,0.04) !important;
-        }
-        .score-circle { box-shadow: inset 0 0 0 10px #F1F5F9 !important; }
-        .feedback-item { border-bottom: 1px solid #F1F5F9 !important; }
     </style>
     """
 
@@ -177,7 +201,6 @@ def render_login_register():
     tab1, tab2 = st.tabs(["🔑 Login", "📝 Register"])
     
     with tab1:
-        st.markdown('<div class="auth-container">', unsafe_allow_html=True)
         st.subheader("Login to your account")
         with st.form("login_form"):
             username = st.text_input("Username", placeholder="Enter username")
@@ -189,16 +212,13 @@ def render_login_register():
                 if user_data:
                     st.session_state.logged_in = True
                     st.session_state.user = user_data
-                    # Persist session query params across refreshes
                     st.query_params["session_token"] = generate_session_token(user_data["username"])
                     st.success(msg)
                     st.rerun()
                 else:
                     st.error(msg)
-        st.markdown('</div>', unsafe_allow_html=True)
         
     with tab2:
-        st.markdown('<div class="auth-container">', unsafe_allow_html=True)
         st.subheader("Create a new account")
         with st.form("register_form"):
             reg_username = st.text_input("Username", placeholder="3-20 characters, no spaces")
@@ -212,7 +232,6 @@ def render_login_register():
                     st.success(msg)
                 else:
                     st.error(msg)
-        st.markdown('</div>', unsafe_allow_html=True)
 
 # ----------------- MAIN LOGGED IN APP -----------------
 def render_main_app():
@@ -405,8 +424,8 @@ def render_analysis_result(analysis):
             
         st.markdown(f"""
         <div class="metric-card" style="text-align: center;">
-            <h4 style="margin-bottom: 20px; color: #1E293B;">ATS MATCH SCORE</h4>
-            <div class="score-circle" style="box-shadow: inset 0 0 0 10px #F1F5F9, 0 0 0 4px {circle_color}; color: {text_color};">
+            <h4 style="margin-bottom: 20px;">ATS MATCH SCORE</h4>
+            <div class="score-circle" style="box-shadow: inset 0 0 0 10px var(--circle-ring), 0 0 0 4px {circle_color}; color: {text_color};">
                 {score}%
             </div>
             <div style="font-weight: 800; font-size: 1.1rem; color: {text_color}; letter-spacing: 1px;">
@@ -418,9 +437,9 @@ def render_analysis_result(analysis):
     with col_summary:
         st.markdown(f"""
         <div class="metric-card" style="height: 100%;">
-            <h4 style="color: #1E293B; margin-top:0;">Evaluation Summary</h4>
-            <p><b>Hiring Decision:</b> <span style="background-color: #E2E8F0; padding: 4px 8px; border-radius: 4px; font-weight:bold;">{analysis['llm_feedback']['hiring_recommendation']}</span></p>
-            <p style="line-height: 1.6; color: #334155;">{analysis['llm_feedback']['hiring_explanation']}</p>
+            <h4 style="margin-top:0;">Evaluation Summary</h4>
+            <p><b>Hiring Decision:</b> <span style="background-color: var(--card-border); padding: 4px 8px; border-radius: 4px; font-weight:bold;">{analysis['llm_feedback']['hiring_recommendation']}</span></p>
+            <p style="line-height: 1.6;">{analysis['llm_feedback']['hiring_explanation']}</p>
         </div>
         """, unsafe_allow_html=True)
 
@@ -510,7 +529,7 @@ def render_analysis_result(analysis):
             st.markdown(f"""
             <div class="metric-card">
                 <h4 style="margin: 0 0 10px 0; color: #0284C7;">{idx+1}. {project.get('title', 'Recommended Project')}</h4>
-                <p style="color: #475569; line-height: 1.6;">{project.get('description', '')}</p>
+                <p style="line-height: 1.6;">{project.get('description', '')}</p>
             </div>
             """, unsafe_allow_html=True)
             
