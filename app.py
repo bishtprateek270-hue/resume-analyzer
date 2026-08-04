@@ -134,7 +134,7 @@ _DARK = st.session_state.dark_mode
 if _DARK:
     _theme_css = """
     <style>
-        /* === DARK THEME === */
+        /* === DARK THEME — overrides the base=light from config.toml === */
         :root {
             --card-bg: #1E293B;
             --card-border: #334155;
@@ -145,22 +145,87 @@ if _DARK:
             --circle-ring: #334155;
             --divider: #334155;
         }
-        .stApp { background-color: #0F172A !important; }
-        section[data-testid="stSidebar"] {
+
+        /* ── App & Sidebar background ── */
+        .stApp,
+        .stApp > div,
+        [data-testid="stAppViewContainer"],
+        [data-testid="stMain"],
+        [data-testid="stMainBlockContainer"] {
+            background-color: #0F172A !important;
+            color: #F1F5F9 !important;
+        }
+        section[data-testid="stSidebar"],
+        section[data-testid="stSidebar"] > div {
             background-color: #1E293B !important;
             border-right: 1px solid #334155 !important;
         }
-        /* Only colour Streamlit's own markdown text elements */
-        .stMarkdown h1, .stMarkdown h2, .stMarkdown h3,
-        .stMarkdown h4, .stMarkdown h5, .stMarkdown h6 { color: #F1F5F9 !important; }
-        .stMarkdown p, .stMarkdown li { color: #CBD5E1 !important; }
-        /* Tabs */
+
+        /* ── All text ── */
+        .stApp h1, .stApp h2, .stApp h3,
+        .stApp h4, .stApp h5, .stApp h6 { color: #F1F5F9 !important; }
+        .stApp p, .stApp label,
+        .stApp li, .stApp small,
+        .stApp .stMarkdown { color: #CBD5E1 !important; }
+
+        /* ── Text inputs & textareas ── */
+        .stTextInput input,
+        .stTextArea textarea,
+        [data-baseweb="input"] input,
+        [data-baseweb="textarea"] textarea,
+        [data-baseweb="base-input"] input,
+        [data-baseweb="base-input"] textarea {
+            background-color: #1E293B !important;
+            color: #F1F5F9 !important;
+            border: 1.5px solid #475569 !important;
+            border-radius: 8px !important;
+        }
+        .stTextInput input:focus,
+        .stTextArea textarea:focus {
+            border-color: #38BDF8 !important;
+            box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2) !important;
+        }
+        /* Input labels */
+        .stTextInput label,
+        .stTextArea label,
+        .stFileUploader label,
+        .stSelectbox label { color: #94A3B8 !important; }
+
+        /* ── File uploader ── */
+        [data-testid="stFileUploaderDropzone"] {
+            background-color: #1E293B !important;
+            border: 2px dashed #475569 !important;
+            border-radius: 10px !important;
+        }
+        [data-testid="stFileUploaderDropzone"] p,
+        [data-testid="stFileUploaderDropzone"] span { color: #94A3B8 !important; }
+
+        /* ── Select / dropdown ── */
+        [data-baseweb="select"] > div,
+        [data-baseweb="popover"] { 
+            background-color: #1E293B !important;
+            color: #F1F5F9 !important;
+            border: 1.5px solid #475569 !important;
+        }
+
+        /* ── Expanders ── */
+        [data-testid="stExpander"] {
+            background-color: #1E293B !important;
+            border: 1px solid #334155 !important;
+            border-radius: 8px !important;
+        }
+        [data-testid="stExpander"] summary,
+        [data-testid="stExpander"] p { color: #CBD5E1 !important; }
+
+        /* ── Tabs ── */
         button[data-baseweb="tab"] { color: #94A3B8 !important; }
         button[data-baseweb="tab"][aria-selected="true"] {
             color: #38BDF8 !important;
             border-bottom-color: #38BDF8 !important;
         }
-        /* Secondary buttons — always visible on dark bg */
+        [data-testid="stTabs"] { background-color: transparent !important; }
+
+        /* ── Secondary buttons ── */
         button[kind="secondary"], button[data-testid="baseButton-secondary"] {
             background-color: #1E293B !important;
             color: #F1F5F9 !important;
@@ -169,7 +234,18 @@ if _DARK:
         button[kind="secondary"]:hover, button[data-testid="baseButton-secondary"]:hover {
             border-color: #38BDF8 !important;
             color: #38BDF8 !important;
+            background-color: #0F172A !important;
         }
+
+        /* ── Info / success / warning / error boxes ── */
+        [data-testid="stAlert"] {
+            background-color: #1E293B !important;
+            color: #CBD5E1 !important;
+            border: 1px solid #334155 !important;
+        }
+
+        /* ── Dividers ── */
+        hr { border-color: #334155 !important; }
     </style>
     """
 else:
