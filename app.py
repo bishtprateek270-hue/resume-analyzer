@@ -160,6 +160,16 @@ if _DARK:
             color: #38BDF8 !important;
             border-bottom-color: #38BDF8 !important;
         }
+        /* Secondary buttons — always visible on dark bg */
+        button[kind="secondary"], button[data-testid="baseButton-secondary"] {
+            background-color: #1E293B !important;
+            color: #F1F5F9 !important;
+            border: 1px solid #475569 !important;
+        }
+        button[kind="secondary"]:hover, button[data-testid="baseButton-secondary"]:hover {
+            border-color: #38BDF8 !important;
+            color: #38BDF8 !important;
+        }
     </style>
     """
 else:
@@ -178,6 +188,28 @@ else:
         }
         .stApp { background-color: #F8FAFC !important; }
         section[data-testid="stSidebar"] { background-color: #FFFFFF !important; }
+        /* Secondary buttons — give them a border so they don't vanish on white bg */
+        button[kind="secondary"], button[data-testid="baseButton-secondary"] {
+            background-color: #FFFFFF !important;
+            color: #1E293B !important;
+            border: 1.5px solid #CBD5E1 !important;
+        }
+        button[kind="secondary"]:hover, button[data-testid="baseButton-secondary"]:hover {
+            border-color: #0284C7 !important;
+            color: #0284C7 !important;
+            background-color: #EFF6FF !important;
+        }
+        /* Sidebar nav buttons specifically */
+        section[data-testid="stSidebar"] button[data-testid="baseButton-secondary"] {
+            background-color: #F8FAFC !important;
+            color: #334155 !important;
+            border: 1.5px solid #CBD5E1 !important;
+        }
+        section[data-testid="stSidebar"] button[data-testid="baseButton-secondary"]:hover {
+            background-color: #EFF6FF !important;
+            border-color: #0284C7 !important;
+            color: #0284C7 !important;
+        }
     </style>
     """
 
