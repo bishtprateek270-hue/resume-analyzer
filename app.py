@@ -148,7 +148,12 @@ if "logged_in" not in st.session_state:
 if "user" not in st.session_state:
     st.session_state.user = None
 if "gemini_api_key" not in st.session_state:
-    st.session_state.gemini_api_key = os.getenv("GEMINI_API_KEY", "")
+    try:
+        st.session_state.gemini_api_key = st.secrets.get("GEMINI_API_KEY", "")
+    except Exception:
+        st.session_state.gemini_api_key = ""
+    if not st.session_state.gemini_api_key:
+        st.session_state.gemini_api_key = os.getenv("GEMINI_API_KEY", "")
 if "active_analysis" not in st.session_state:
     st.session_state.active_analysis = None
 if "current_view" not in st.session_state:
@@ -173,68 +178,146 @@ if not st.session_state.logged_in:
 if st.session_state.dark_mode:
     st.markdown("""
     <style>
-        .stApp {
-            background-color: #0F172A !important;
-            color: #F8FAFC !important;
+        :root {
+            --bg-primary: #0F172A;
+            --text-primary: #F8FAFC;
+            --text-secondary: #94A3B8;
+            --card-bg: #1E293B;
+            --card-border: #334155;
+            --sidebar-bg: #1E293B;
+            --input-bg: #1E293B;
+            --input-border: #334155;
+            --input-text: #F8FAFC;
+            --button-sec-bg: #1E293B;
+            --button-sec-border: #334155;
+            --button-sec-text: #F8FAFC;
+            --tab-text: #94A3B8;
+            --tab-active: #38BDF8;
+            --circle-bg: #334155;
         }
-        .metric-card {
-            background-color: #1E293B !important;
-            border: 1px solid #334155 !important;
-            color: #F8FAFC !important;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2) !important;
+        
+        /* Apply Dark Theme Overrides */
+        .stApp, section[data-testid="stMain"] {
+            background-color: var(--bg-primary) !important;
+            color: var(--text-primary) !important;
         }
-        .metric-card h4, .metric-card p, .metric-card div, .metric-card span {
-            color: #F8FAFC !important;
+        section[data-testid="stSidebar"] {
+            background-color: var(--sidebar-bg) !important;
+            border-right: 1px solid var(--card-border) !important;
         }
         .app-title {
-            background: linear-gradient(135deg, #F8FAFC, #38BDF8) !important;
+            background: linear-gradient(135deg, var(--text-primary), var(--tab-active)) !important;
             -webkit-background-clip: text !important;
             -webkit-text-fill-color: transparent !important;
         }
         .app-subtitle {
-            color: #94A3B8 !important;
+            color: var(--text-secondary) !important;
         }
-        h1, h2, h3, h4, h5, h6, label, p, span, li {
-            color: #F8FAFC !important;
+        .metric-card {
+            background-color: var(--card-bg) !important;
+            border: 1px solid var(--card-border) !important;
+            color: var(--text-primary) !important;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2) !important;
         }
+        .metric-card h4, .metric-card p, .metric-card div, .metric-card span {
+            color: var(--text-primary) !important;
+        }
+        /* inputs and selections */
+        input, textarea, [data-baseweb="input"] input, [data-baseweb="textarea"] textarea {
+            background-color: var(--input-bg) !important;
+            color: var(--input-text) !important;
+            border: 1px solid var(--input-border) !important;
+        }
+        [data-baseweb="select"] > div {
+            background-color: var(--input-bg) !important;
+            color: var(--input-text) !important;
+            border: 1px solid var(--input-border) !important;
+        }
+        /* Buttons */
+        button[data-testid="baseButton-secondary"] {
+            background-color: var(--button-sec-bg) !important;
+            color: var(--button-sec-text) !important;
+            border: 1px solid var(--button-sec-border) !important;
+        }
+        button[data-testid="baseButton-secondary"]:hover {
+            border-color: var(--tab-active) !important;
+            color: var(--tab-active) !important;
+        }
+        /* Tabs */
         .stTabs button {
-            color: #94A3B8 !important;
+            color: var(--tab-text) !important;
         }
         .stTabs button[aria-selected="true"] {
-            color: #38BDF8 !important;
-            border-bottom-color: #38BDF8 !important;
+            color: var(--tab-active) !important;
+            border-bottom-color: var(--tab-active) !important;
         }
-        .feedback-item {
-            border-bottom: 1px solid #334155 !important;
+        /* text styles */
+        h1, h2, h3, h4, h5, h6, label, p, span, li, small {
+            color: var(--text-primary) !important;
+        }
+        /* uploader */
+        section[data-testid="stFileUploaderDropzone"] {
+            background-color: var(--card-bg) !important;
+            border: 2px dashed var(--card-border) !important;
+        }
+        section[data-testid="stFileUploaderDropzone"] [data-testid="stMarkdownContainer"] p {
+            color: var(--text-primary) !important;
         }
         .score-circle {
-            box-shadow: inset 0 0 0 10px #334155 !important;
+            box-shadow: inset 0 0 0 10px var(--circle-bg) !important;
+        }
+        div[data-testid="stAlert"] {
+            background-color: var(--card-bg) !important;
+            color: var(--text-primary) !important;
+            border: 1px solid var(--card-border) !important;
+        }
+        .feedback-item {
+            border-bottom: 1px solid var(--card-border) !important;
         }
     </style>
     """, unsafe_allow_html=True)
 else:
     st.markdown("""
     <style>
-        .stApp {
-            background-color: #F8FAFC !important;
-            color: #0F172A !important;
+        :root {
+            --bg-primary: #F8FAFC;
+            --text-primary: #0F172A;
+            --text-secondary: #64748B;
+            --card-bg: #FFFFFF;
+            --card-border: #E2E8F0;
+            --sidebar-bg: #FFFFFF;
+            --input-bg: #FFFFFF;
+            --input-border: #CBD5E1;
+            --input-text: #0F172A;
+            --button-sec-bg: #FFFFFF;
+            --button-sec-border: #CBD5E1;
+            --button-sec-text: #0F172A;
+            --tab-text: #64748B;
+            --tab-active: #0284C7;
+            --circle-bg: #F1F5F9;
         }
-        .metric-card {
-            background-color: #FFFFFF !important;
-            border: 1px solid #E2E8F0 !important;
-            color: #0F172A !important;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03) !important;
+        
+        /* Apply Light Theme Overrides */
+        .stApp, section[data-testid="stMain"] {
+            background-color: var(--bg-primary) !important;
+            color: var(--text-primary) !important;
         }
         .app-title {
-            background: linear-gradient(135deg, #1E293B, #0284C7) !important;
+            background: linear-gradient(135deg, var(--text-primary), var(--tab-active)) !important;
             -webkit-background-clip: text !important;
             -webkit-text-fill-color: transparent !important;
         }
         .app-subtitle {
-            color: #64748B !important;
+            color: var(--text-secondary) !important;
+        }
+        .metric-card {
+            background-color: var(--card-bg) !important;
+            border: 1px solid var(--card-border) !important;
+            color: var(--text-primary) !important;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03) !important;
         }
         .score-circle {
-            box-shadow: inset 0 0 0 10px #F1F5F9 !important;
+            box-shadow: inset 0 0 0 10px var(--circle-bg) !important;
         }
     </style>
     """, unsafe_allow_html=True)
@@ -371,10 +454,17 @@ def render_new_analysis_page():
             st.error("Please upload a PDF resume.")
             return
             
-        # Retrieve key from session state or env
-        gemini_key = st.session_state.gemini_api_key or os.getenv("GEMINI_API_KEY", "")
+        # Retrieve key from secrets or env
+        gemini_key = ""
+        try:
+            gemini_key = st.secrets.get("GEMINI_API_KEY", "")
+        except Exception:
+            pass
+        if not gemini_key:
+            gemini_key = st.session_state.gemini_api_key or os.getenv("GEMINI_API_KEY", "")
+            
         if not gemini_key.strip():
-            st.error("⚠️ Gemini API Key is missing. Please add it to the `.env` file in your project directory (e.g. `GEMINI_API_KEY=your_key`) and restart/refresh the application.")
+            st.error("⚠️ Gemini API Key is missing. Please add it to the `.env` file in your project directory or configure it in your Streamlit dashboard secrets.")
             return
             
         with st.spinner("Processing PDF and analyzing ATS match score..."):
