@@ -144,13 +144,27 @@ def get_llm_analysis(resume_text: str, jd_text: str, score_details: Dict[str, An
         )
 
         text = response.text.strip()
+
+        # Strip markdown code fences if present
         if text.startswith("```json"):
             text = text[7:]
+        elif text.startswith("```"):
+            text = text[3:]
         if text.endswith("```"):
             text = text[:-3]
         text = text.strip()
 
-        analysis = json.loads(text)
+        # Try direct parse first
+        try:
+            analysis = json.loads(text)
+        except json.JSONDecodeError:
+            # Fallback: extract the outermost {...} block via regex
+            import re
+            match = re.search(r'\{.*\}', text, re.DOTALL)
+            if match:
+                analysis = json.loads(match.group())
+            else:
+                raise ValueError("Could not extract valid JSON from LLM response.")
 
         # Ensure required keys exist
         required_keys = ["strengths", "weaknesses", "suggestions", "recommended_projects", "hiring_recommendation", "hiring_explanation"]
@@ -168,19 +182,24 @@ def get_llm_analysis(resume_text: str, jd_text: str, score_details: Dict[str, An
         decision = _score_to_decision(ats_score)
         return {
             "strengths": ["Resume parsed and ATS score calculated successfully."],
-            "weaknesses": ["Qualitative AI analysis unavailable — API quota may be exhausted."],
-            "suggestions": ["Verify your Gemini API key is active and has remaining quota."],
+            "weaknesses": ["AI qualitative analysis could not be completed for this run."],
+            "suggestions": [
+                "Add more keywords from the job description to your skills and experience sections.",
+                "Quantify your achievements with numbers and metrics where possible.",
+                "Ensure your resume has clearly labelled sections: Experience, Education, Skills, Projects."
+            ],
             "recommended_projects": [
                 {
-                    "title": "Portfolio Showcase App",
-                    "description": "Build a responsive portfolio to highlight your current skill set and bridge missing skills.",
-                    "tech_stack": list(score_details.get("matched_skills", ["Python"]))[:4]
+                    "title": "Skill-Bridge Portfolio Project",
+                    "description": "Build a hands-on project using the missing skills identified in the gap analysis to strengthen your candidacy for this role.",
+                    "tech_stack": list(score_details.get("missing_skills", ["Python"]))[:4]
                 }
             ],
             "hiring_recommendation": decision,
             "hiring_explanation": (
-                f"ATS Score: {ats_score}% → Tier: {decision}. "
-                f"(AI explanation unavailable — {str(e).split('.')[0]}. "
-                f"Code-based ATS analysis completed successfully.)"
+                f"Based on your ATS match score of {ats_score}%, this application is rated as '{decision}'. "
+                f"Your resume matched {len(score_details.get('matched_skills', []))} of the required skills. "
+                f"Focus on adding the missing skills and improving your experience section to increase your score."
             )
         }
+
