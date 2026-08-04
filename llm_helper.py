@@ -1,7 +1,36 @@
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 import json
 import os
-from typing import Dict, Any, Tuple
+from typing import Dict, Any
+
+# Ordered list of preferred models (newest first). The app will try each in order.
+CANDIDATE_MODELS = [
+    "gemini-3.5-flash",
+    "gemini-3.5-flash-lite",
+    "gemini-2.0-flash",
+    "gemini-2.0-flash-lite",
+]
+
+def _get_client(api_key: str):
+    return genai.Client(api_key=api_key.strip())
+
+def _find_working_model(client) -> str:
+    """
+    Tries each candidate model in order and returns the first that works.
+    Falls back to gemini-2.0-flash if none resolve.
+    """
+    for model_name in CANDIDATE_MODELS:
+        try:
+            client.models.generate_content(
+                model=model_name,
+                contents="hi",
+                config=types.GenerateContentConfig(max_output_tokens=3)
+            )
+            return model_name
+        except Exception:
+            continue
+    return CANDIDATE_MODELS[-1]  # last resort
 
 def validate_gemini_api_key(api_key: str) -> bool:
     """
@@ -11,29 +40,25 @@ def validate_gemini_api_key(api_key: str) -> bool:
     if not api_key or not api_key.strip():
         return False
     try:
-        genai.configure(api_key=api_key.strip())
-        model = genai.GenerativeModel("gemini-3.5-flash")
-        # Lightweight test request
-        model.generate_content("test", generation_config={"max_output_tokens": 5})
+        client = _get_client(api_key)
+        _find_working_model(client)
         return True
     except Exception as e:
         print(f"API Key Validation Error: {e}")
         return False
 
+
 def get_llm_analysis(resume_text: str, jd_text: str, score_details: Dict[str, Any], api_key: str) -> Dict[str, Any]:
     """
-    Invokes Gemini LLM in JSON mode to generate qualitative feedback,
-    resume suggestions, projects recommendations, and hiring analysis.
+    Invokes Gemini LLM to generate qualitative feedback,
+    resume suggestions, project recommendations, and hiring analysis.
     """
     if not api_key or not api_key.strip():
-        raise ValueError("Gemini API key is missing. Please configure it in Settings or your environment.")
+        raise ValueError("Gemini API key is missing.")
 
-    # Configure API
-    genai.configure(api_key=api_key.strip())
-    
-    # Use gemini-1.5-flash for speed and cost-effectiveness
-    model = genai.GenerativeModel("gemini-3.5-flash")
-    
+    client = _get_client(api_key)
+    model_name = _find_working_model(client)
+
     prompt = f"""
     You are an expert ATS (Applicant Tracking System) recruiter and senior technical career advisor.
     You will analyze a candidate's resume text against a Job Description, using a set of deterministic score metrics that have already been calculated.
@@ -64,61 +89,59 @@ def get_llm_analysis(resume_text: str, jd_text: str, score_details: Dict[str, An
         "recommended_projects": [
             {{
                 "title": "Project Name",
-                "description": "Explain how this project bridges the candidate's skill gaps and fits the job description.",
-                "tech_stack": ["React", "FastAPI", ...],
-                "implementation_steps": ["step 1", "step 2", ...]
+                "description": "Explain how this project bridges the candidate skill gaps and fits the job description.",
+                "tech_stack": ["React", "FastAPI", ...]
             }},
             {{
                 "title": "Second Project Name",
                 "description": "Detailed project idea focused on other missing technologies.",
-                "tech_stack": ["AWS", "Docker", ...],
-                "implementation_steps": ["step 1", "step 2", ...]
+                "tech_stack": ["AWS", "Docker", ...]
             }}
         ],
         "hiring_recommendation": "Strong Hire | Hire | Borderline | No Hire",
-        "hiring_explanation": "Detailed explanation of the hiring decision, justification of how the skills/experience match, and resume formatting assessment."
+        "hiring_explanation": "Detailed explanation of the hiring decision."
     }}
-    
-    Ensure all text values in the JSON are clean and properly escaped. Do not include markdown code block formatting (like ```json) in the raw response text, just return the JSON object directly.
+
+    Return only valid JSON. Do not include markdown code blocks like ```json.
     """
 
     try:
-        response = model.generate_content(
-            prompt,
-            generation_config={"response_mime_type": "application/json"}
+        response = client.models.generate_content(
+            model=model_name,
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                response_mime_type="application/json"
+            )
         )
-        
-        # Clean response if markdown blocks are returned
+
         text = response.text.strip()
         if text.startswith("```json"):
             text = text[7:]
         if text.endswith("```"):
             text = text[:-3]
         text = text.strip()
-        
+
         analysis = json.loads(text)
-        
-        # Validate critical keys in JSON response
+
+        # Ensure required keys exist
         required_keys = ["strengths", "weaknesses", "suggestions", "recommended_projects", "hiring_recommendation", "hiring_explanation"]
         for key in required_keys:
             if key not in analysis:
-                analysis[key] = [] if "s" in key[-1] or "project" in key else "Not provided"
-                
+                analysis[key] = [] if key in ["strengths", "weaknesses", "suggestions", "recommended_projects"] else "Not provided"
+
         return analysis
-        
+
     except Exception as e:
         print(f"Error calling Gemini API: {e}")
-        # Return fallback structures on error
         return {
-            "strengths": ["Profile parsed but detailed strengths generation failed due to API connection issue."],
-            "weaknesses": ["Profile parsed but detailed weaknesses generation failed due to API connection issue."],
-            "suggestions": ["Ensure your API key is correct and you have an active internet connection to see suggestions."],
+            "strengths": ["Resume parsed successfully. Detailed analysis failed due to API error."],
+            "weaknesses": ["Could not complete qualitative analysis."],
+            "suggestions": ["Verify your API key is active and has quota remaining."],
             "recommended_projects": [
                 {
-                    "title": "Fallback Project: Portfolio Showcase",
-                    "description": "Build a responsive web application to highlight your current skill set.",
-                    "tech_stack": list(score_details["matched_skills"])[:3] if score_details["matched_skills"] else ["Python"],
-                    "implementation_steps": ["Initialize repo", "Build portfolio page", "Deploy to Vercel/Netlify"]
+                    "title": "Portfolio Showcase App",
+                    "description": "Build a responsive portfolio to highlight your current skill set.",
+                    "tech_stack": list(score_details.get("matched_skills", ["Python"]))[:3]
                 }
             ],
             "hiring_recommendation": "Borderline",

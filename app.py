@@ -27,100 +27,35 @@ st.set_page_config(
 # Initialize database
 database.init_db()
 
-# Premium Custom CSS
+# Base CSS (always applied, theme-agnostic)
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
-    
-    html, body, [class*="css"] {
-        font-family: 'Plus Jakarta Sans', sans-serif;
-    }
-    
-    /* Premium Title styling */
-    .app-title {
-        font-size: 2.5rem;
-        font-weight: 800;
-        background: linear-gradient(135deg, #1E293B, #0284C7);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        margin-bottom: 0.2rem;
-    }
-    .app-subtitle {
-        font-size: 1.1rem;
-        color: #64748B;
-        margin-bottom: 2rem;
-    }
-    
-    /* Custom Card Design */
-    .metric-card {
-        background-color: #FFFFFF;
-        border: 1px solid #E2E8F0;
-        border-radius: 16px;
-        padding: 24px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
-        margin-bottom: 16px;
-        transition: transform 0.2s, box-shadow 0.2s;
-    }
-    .metric-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
-    }
-    
-    /* Tag Styling */
-    .tag {
-        display: inline-block;
-        padding: 6px 12px;
-        border-radius: 9999px;
-        font-size: 0.85rem;
-        font-weight: 600;
-        margin: 4px;
-    }
-    .tag-matched {
-        background-color: #DEF7EC;
-        color: #03543F;
-        border: 1px solid #BCF0DA;
-    }
-    .tag-missing {
-        background-color: #FEF08A;
-        color: #854D0E;
-        border: 1px solid #FDE047;
-    }
-    .tag-section {
-        background-color: #E0F2FE;
-        color: #0369A1;
-        border: 1px solid #BAE6FD;
-    }
-    
-    /* Bullet list overrides */
-    .feedback-item {
-        padding: 8px 0;
-        border-bottom: 1px solid #F1F5F9;
-    }
-    
-    /* Login Box Container */
-    .auth-container {
-        max-width: 480px;
-        margin: 80px auto;
-        padding: 40px;
-        background-color: #FFFFFF;
-        border: 1px solid #E2E8F0;
-        border-radius: 20px;
-        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
-    }
-    
-    /* Score display circular badge */
+    html, body, [class*="css"] { font-family: 'Plus Jakarta Sans', sans-serif; }
+
+    /* Tags */
+    .tag { display: inline-block; padding: 5px 12px; border-radius: 9999px; font-size: 0.82rem; font-weight: 600; margin: 3px; }
+    .tag-matched { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+    .tag-missing { background: #fef9c3; color: #713f12; border: 1px solid #fef08a; }
+    .tag-section  { background: #e0f2fe; color: #075985; border: 1px solid #bae6fd; }
+
+    /* Score Circle */
     .score-circle {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 140px;
-        height: 140px;
-        border-radius: 50%;
-        margin: 0 auto 15px auto;
-        font-size: 2.2rem;
-        font-weight: 800;
-        box-shadow: inset 0 0 0 12px #F1F5F9;
+        display: flex; align-items: center; justify-content: center;
+        width: 130px; height: 130px; border-radius: 50%;
+        margin: 0 auto 12px auto; font-size: 2rem; font-weight: 800;
     }
+
+    /* Cards */
+    .metric-card {
+        border-radius: 14px; padding: 22px;
+        margin-bottom: 14px;
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    .metric-card:hover { transform: translateY(-2px); }
+
+    /* Feedback rows */
+    .feedback-item { padding: 7px 0; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -175,152 +110,54 @@ if not st.session_state.logged_in:
                 }
 
 # --- Dynamic Theme Styling ---
-if st.session_state.dark_mode:
-    st.markdown("""
+_DARK = st.session_state.dark_mode
+
+if _DARK:
+    _theme_css = """
     <style>
-        :root {
-            --bg-primary: #0F172A;
-            --text-primary: #F8FAFC;
-            --text-secondary: #94A3B8;
-            --card-bg: #1E293B;
-            --card-border: #334155;
-            --sidebar-bg: #1E293B;
-            --input-bg: #1E293B;
-            --input-border: #334155;
-            --input-text: #F8FAFC;
-            --button-sec-bg: #1E293B;
-            --button-sec-border: #334155;
-            --button-sec-text: #F8FAFC;
-            --tab-text: #94A3B8;
-            --tab-active: #38BDF8;
-            --circle-bg: #334155;
-        }
-        
-        /* Apply Dark Theme Overrides */
-        .stApp, section[data-testid="stMain"] {
-            background-color: var(--bg-primary) !important;
-            color: var(--text-primary) !important;
-        }
+        /* === DARK THEME === */
+        .stApp { background-color: #0F172A !important; color: #F1F5F9 !important; }
         section[data-testid="stSidebar"] {
-            background-color: var(--sidebar-bg) !important;
-            border-right: 1px solid var(--card-border) !important;
+            background-color: #1E293B !important;
+            border-right: 1px solid #334155 !important;
         }
-        .app-title {
-            background: linear-gradient(135deg, var(--text-primary), var(--tab-active)) !important;
-            -webkit-background-clip: text !important;
-            -webkit-text-fill-color: transparent !important;
-        }
-        .app-subtitle {
-            color: var(--text-secondary) !important;
-        }
+        /* Cards */
         .metric-card {
-            background-color: var(--card-bg) !important;
-            border: 1px solid var(--card-border) !important;
-            color: var(--text-primary) !important;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2) !important;
+            background: #1E293B !important;
+            border: 1px solid #334155 !important;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3) !important;
         }
-        .metric-card h4, .metric-card p, .metric-card div, .metric-card span {
-            color: var(--text-primary) !important;
-        }
-        /* inputs and selections */
-        input, textarea, [data-baseweb="input"] input, [data-baseweb="textarea"] textarea {
-            background-color: var(--input-bg) !important;
-            color: var(--input-text) !important;
-            border: 1px solid var(--input-border) !important;
-        }
-        [data-baseweb="select"] > div {
-            background-color: var(--input-bg) !important;
-            color: var(--input-text) !important;
-            border: 1px solid var(--input-border) !important;
-        }
-        /* Buttons */
-        button[data-testid="baseButton-secondary"] {
-            background-color: var(--button-sec-bg) !important;
-            color: var(--button-sec-text) !important;
-            border: 1px solid var(--button-sec-border) !important;
-        }
-        button[data-testid="baseButton-secondary"]:hover {
-            border-color: var(--tab-active) !important;
-            color: var(--tab-active) !important;
-        }
+        /* All text */
+        h1, h2, h3, h4, h5, h6 { color: #F1F5F9 !important; }
+        p, label, li, span, small, div { color: #CBD5E1 !important; }
+        /* Score circle ring */
+        .score-circle { box-shadow: inset 0 0 0 10px #334155 !important; }
+        .feedback-item { border-bottom: 1px solid #334155 !important; }
         /* Tabs */
-        .stTabs button {
-            color: var(--tab-text) !important;
-        }
-        .stTabs button[aria-selected="true"] {
-            color: var(--tab-active) !important;
-            border-bottom-color: var(--tab-active) !important;
-        }
-        /* text styles */
-        h1, h2, h3, h4, h5, h6, label, p, span, li, small {
-            color: var(--text-primary) !important;
-        }
-        /* uploader */
-        section[data-testid="stFileUploaderDropzone"] {
-            background-color: var(--card-bg) !important;
-            border: 2px dashed var(--card-border) !important;
-        }
-        section[data-testid="stFileUploaderDropzone"] [data-testid="stMarkdownContainer"] p {
-            color: var(--text-primary) !important;
-        }
-        .score-circle {
-            box-shadow: inset 0 0 0 10px var(--circle-bg) !important;
-        }
-        div[data-testid="stAlert"] {
-            background-color: var(--card-bg) !important;
-            color: var(--text-primary) !important;
-            border: 1px solid var(--card-border) !important;
-        }
-        .feedback-item {
-            border-bottom: 1px solid var(--card-border) !important;
+        button[data-baseweb="tab"] { color: #94A3B8 !important; }
+        button[data-baseweb="tab"][aria-selected="true"] {
+            color: #38BDF8 !important;
+            border-bottom-color: #38BDF8 !important;
         }
     </style>
-    """, unsafe_allow_html=True)
+    """
 else:
-    st.markdown("""
+    _theme_css = """
     <style>
-        :root {
-            --bg-primary: #F8FAFC;
-            --text-primary: #0F172A;
-            --text-secondary: #64748B;
-            --card-bg: #FFFFFF;
-            --card-border: #E2E8F0;
-            --sidebar-bg: #FFFFFF;
-            --input-bg: #FFFFFF;
-            --input-border: #CBD5E1;
-            --input-text: #0F172A;
-            --button-sec-bg: #FFFFFF;
-            --button-sec-border: #CBD5E1;
-            --button-sec-text: #0F172A;
-            --tab-text: #64748B;
-            --tab-active: #0284C7;
-            --circle-bg: #F1F5F9;
-        }
-        
-        /* Apply Light Theme Overrides */
-        .stApp, section[data-testid="stMain"] {
-            background-color: var(--bg-primary) !important;
-            color: var(--text-primary) !important;
-        }
-        .app-title {
-            background: linear-gradient(135deg, var(--text-primary), var(--tab-active)) !important;
-            -webkit-background-clip: text !important;
-            -webkit-text-fill-color: transparent !important;
-        }
-        .app-subtitle {
-            color: var(--text-secondary) !important;
-        }
+        /* === LIGHT THEME === */
+        .stApp { background-color: #F8FAFC !important; }
+        section[data-testid="stSidebar"] { background-color: #FFFFFF !important; }
         .metric-card {
-            background-color: var(--card-bg) !important;
-            border: 1px solid var(--card-border) !important;
-            color: var(--text-primary) !important;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03) !important;
+            background: #FFFFFF !important;
+            border: 1px solid #E2E8F0 !important;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.04) !important;
         }
-        .score-circle {
-            box-shadow: inset 0 0 0 10px var(--circle-bg) !important;
-        }
+        .score-circle { box-shadow: inset 0 0 0 10px #F1F5F9 !important; }
+        .feedback-item { border-bottom: 1px solid #F1F5F9 !important; }
     </style>
-    """, unsafe_allow_html=True)
+    """
+
+st.markdown(_theme_css, unsafe_allow_html=True)
 
 # Logout function
 def handle_logout():
