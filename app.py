@@ -141,6 +141,8 @@ def verify_session_token(token: str) -> str:
         pass
     return ""
 
+if "dark_mode" not in st.session_state:
+    st.session_state.dark_mode = False
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
 if "user" not in st.session_state:
@@ -166,6 +168,76 @@ if not st.session_state.logged_in:
                     "username": user_info["username"],
                     "email": user_info["email"]
                 }
+
+# --- Dynamic Theme Styling ---
+if st.session_state.dark_mode:
+    st.markdown("""
+    <style>
+        .stApp {
+            background-color: #0F172A !important;
+            color: #F8FAFC !important;
+        }
+        .metric-card {
+            background-color: #1E293B !important;
+            border: 1px solid #334155 !important;
+            color: #F8FAFC !important;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2) !important;
+        }
+        .metric-card h4, .metric-card p, .metric-card div, .metric-card span {
+            color: #F8FAFC !important;
+        }
+        .app-title {
+            background: linear-gradient(135deg, #F8FAFC, #38BDF8) !important;
+            -webkit-background-clip: text !important;
+            -webkit-text-fill-color: transparent !important;
+        }
+        .app-subtitle {
+            color: #94A3B8 !important;
+        }
+        h1, h2, h3, h4, h5, h6, label, p, span, li {
+            color: #F8FAFC !important;
+        }
+        .stTabs button {
+            color: #94A3B8 !important;
+        }
+        .stTabs button[aria-selected="true"] {
+            color: #38BDF8 !important;
+            border-bottom-color: #38BDF8 !important;
+        }
+        .feedback-item {
+            border-bottom: 1px solid #334155 !important;
+        }
+        .score-circle {
+            box-shadow: inset 0 0 0 10px #334155 !important;
+        }
+    </style>
+    """, unsafe_allow_html=True)
+else:
+    st.markdown("""
+    <style>
+        .stApp {
+            background-color: #F8FAFC !important;
+            color: #0F172A !important;
+        }
+        .metric-card {
+            background-color: #FFFFFF !important;
+            border: 1px solid #E2E8F0 !important;
+            color: #0F172A !important;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03) !important;
+        }
+        .app-title {
+            background: linear-gradient(135deg, #1E293B, #0284C7) !important;
+            -webkit-background-clip: text !important;
+            -webkit-text-fill-color: transparent !important;
+        }
+        .app-subtitle {
+            color: #64748B !important;
+        }
+        .score-circle {
+            box-shadow: inset 0 0 0 10px #F1F5F9 !important;
+        }
+    </style>
+    """, unsafe_allow_html=True)
 
 # Logout function
 def handle_logout():
@@ -654,6 +726,15 @@ def render_settings_page():
 
 # ----------------- APP ORCHESTRATOR -----------------
 if __name__ == "__main__":
+    # --- Always Render Theme Toggle in Sidebar ---
+    with st.sidebar:
+        st.markdown("### 🌓 Application Theme")
+        dark_mode = st.toggle("🌙 Dark Mode Theme", value=st.session_state.dark_mode)
+        if dark_mode != st.session_state.dark_mode:
+            st.session_state.dark_mode = dark_mode
+            st.rerun()
+        st.markdown("---")
+
     if st.session_state.logged_in:
         render_main_app()
     else:
