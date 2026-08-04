@@ -188,7 +188,38 @@ else:
         }
         .stApp { background-color: #F8FAFC !important; }
         section[data-testid="stSidebar"] { background-color: #FFFFFF !important; }
-        /* Secondary buttons — give them a border so they don't vanish on white bg */
+
+        /* ── Text inputs & textareas ── */
+        .stTextInput input,
+        .stTextArea textarea,
+        [data-baseweb="input"] input,
+        [data-baseweb="textarea"] textarea {
+            background-color: #FFFFFF !important;
+            color: #0F172A !important;
+            border: 1.5px solid #CBD5E1 !important;
+            border-radius: 8px !important;
+        }
+        .stTextInput input:focus,
+        .stTextArea textarea:focus {
+            border-color: #0284C7 !important;
+            box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15) !important;
+        }
+
+        /* ── File uploader ── */
+        [data-testid="stFileUploaderDropzone"] {
+            background-color: #F8FAFC !important;
+            border: 2px dashed #CBD5E1 !important;
+            border-radius: 10px !important;
+        }
+
+        /* ── Select / dropdown ── */
+        [data-baseweb="select"] > div {
+            background-color: #FFFFFF !important;
+            color: #0F172A !important;
+            border: 1.5px solid #CBD5E1 !important;
+        }
+
+        /* ── Secondary buttons ── */
         button[kind="secondary"], button[data-testid="baseButton-secondary"] {
             background-color: #FFFFFF !important;
             color: #1E293B !important;
@@ -210,6 +241,7 @@ else:
             border-color: #0284C7 !important;
             color: #0284C7 !important;
         }
+
     </style>
     """
 
