@@ -22,6 +22,6 @@ __pycache__/
 .idea/
 .agents/
 
-# Streamlit local cache
-.streamlit/
+# Streamlit local cache — allow config.toml but ignore secrets
+.streamlit/secrets.toml
 *.log
