@@ -575,13 +575,28 @@ def render_analysis_result(analysis):
         """, unsafe_allow_html=True)
         
     with col_summary:
+        decision = analysis['llm_feedback']['hiring_recommendation']
+        # Colour-code badge by decision tier
+        _badge_colors = {
+            "Strong Hire":    ("background:#dcfce7; color:#166534; border:1px solid #86efac;", "✅"),
+            "Hire":           ("background:#dbeafe; color:#1e40af; border:1px solid #93c5fd;", "👍"),
+            "Borderline":     ("background:#fef9c3; color:#854d0e; border:1px solid #fde047;", "⚠️"),
+            "No Hire":        ("background:#fee2e2; color:#991b1b; border:1px solid #fca5a5;", "❌"),
+            "Strong No Hire": ("background:#fce7f3; color:#9d174d; border:1px solid #f9a8d4;", "🚫"),
+        }
+        badge_style, badge_icon = _badge_colors.get(decision, _badge_colors["Borderline"])
         st.markdown(f"""
         <div class="metric-card" style="height: 100%;">
             <h4 style="margin-top:0;">Evaluation Summary</h4>
-            <p><b>Hiring Decision:</b> <span style="background-color: var(--card-border); padding: 4px 8px; border-radius: 4px; font-weight:bold;">{analysis['llm_feedback']['hiring_recommendation']}</span></p>
+            <p><b>Hiring Decision:</b>&nbsp;
+                <span style="{badge_style} padding: 5px 12px; border-radius: 6px; font-weight:700; font-size:0.95rem;">
+                    {badge_icon} {decision}
+                </span>
+            </p>
             <p style="line-height: 1.6;">{analysis['llm_feedback']['hiring_explanation']}</p>
         </div>
         """, unsafe_allow_html=True)
+
 
     # Breakdown Section via Tabs
     st.markdown("<br><h3>Detailed Evaluation Metrics</h3>", unsafe_allow_html=True)

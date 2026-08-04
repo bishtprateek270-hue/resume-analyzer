@@ -15,6 +15,28 @@ CANDIDATE_MODELS = [
 def _get_client(api_key: str):
     return genai.Client(api_key=api_key.strip())
 
+
+def _score_to_decision(ats_score: int) -> str:
+    """
+    Maps ATS score to a standardised hiring decision tier.
+      >= 80  →  Strong Hire
+      65-79  →  Hire
+      50-64  →  Borderline
+      35-49  →  No Hire
+      < 35   →  Strong No Hire
+    """
+    if ats_score >= 80:
+        return "Strong Hire"
+    elif ats_score >= 65:
+        return "Hire"
+    elif ats_score >= 50:
+        return "Borderline"
+    elif ats_score >= 35:
+        return "No Hire"
+    else:
+        return "Strong No Hire"
+
+
 def _find_working_model(client) -> str:
     """
     Tries each candidate model in order and returns the first that works.
@@ -59,9 +81,12 @@ def get_llm_analysis(resume_text: str, jd_text: str, score_details: Dict[str, An
     client = _get_client(api_key)
     model_name = _find_working_model(client)
 
+    ats_score = score_details.get('ats_score', 0)
+    expected_decision = _score_to_decision(ats_score)
+
     prompt = f"""
-    You are an expert ATS (Applicant Tracking System) recruiter and senior technical career advisor.
-    You will analyze a candidate's resume text against a Job Description, using a set of deterministic score metrics that have already been calculated.
+    You are an expert ATS recruiter and senior technical career advisor.
+    Analyse the candidate's resume against the job description using the deterministic metrics below.
 
     Resume Text:
     ---
@@ -74,35 +99,39 @@ def get_llm_analysis(resume_text: str, jd_text: str, score_details: Dict[str, An
     ---
 
     Deterministic Match Metrics:
-    - Overall ATS Match Score: {score_details['ats_score']}%
+    - Overall ATS Match Score: {ats_score}%
     - Skills Score: {score_details['skills_score']}%
-    - Experience Score: {score_details['experience_score']}% (Candidate Experience: {score_details['candidate_experience']} years, Required: {score_details['required_experience']} years)
-    - Education Score: {score_details['education_score']}% (Candidate Education: {score_details['candidate_education']}, Required: {score_details['required_education']})
+    - Experience Score: {score_details['experience_score']}% (Candidate: {score_details['candidate_experience']} yrs, Required: {score_details['required_experience']} yrs)
+    - Education Score: {score_details['education_score']}% (Candidate: {score_details['candidate_education']}, Required: {score_details['required_education']})
     - Matched Skills: {', '.join(score_details['matched_skills']) if score_details['matched_skills'] else 'None'}
-    - Missing Skills Identified: {', '.join(score_details['missing_skills']) if score_details['missing_skills'] else 'None'}
+    - Missing Skills: {', '.join(score_details['missing_skills']) if score_details['missing_skills'] else 'None'}
 
-    Based on this data, generate a structured evaluation in JSON format. The response must follow this JSON schema exactly:
+    IMPORTANT — Hiring Decision Tiers (must follow these exactly based on ATS score):
+      >= 80%  →  "Strong Hire"
+      65-79%  →  "Hire"
+      50-64%  →  "Borderline"
+      35-49%  →  "No Hire"
+      < 35%   →  "Strong No Hire"
+
+    The ATS score is {ats_score}%, so the hiring_recommendation MUST be "{expected_decision}".
+
+    Return a JSON object with this exact schema:
     {{
-        "strengths": ["bullet point 1", "bullet point 2", ...],
-        "weaknesses": ["bullet point 1", "bullet point 2", ...],
-        "suggestions": ["specific actionable change 1 with reference to wording/section", ...],
+        "strengths": ["bullet 1", "bullet 2", ...],
+        "weaknesses": ["bullet 1", "bullet 2", ...],
+        "suggestions": ["specific actionable improvement 1", ...],
         "recommended_projects": [
             {{
                 "title": "Project Name",
-                "description": "Explain how this project bridges the candidate skill gaps and fits the job description.",
-                "tech_stack": ["React", "FastAPI", ...]
-            }},
-            {{
-                "title": "Second Project Name",
-                "description": "Detailed project idea focused on other missing technologies.",
-                "tech_stack": ["AWS", "Docker", ...]
+                "description": "How this bridges the skill gap for this job.",
+                "tech_stack": ["Tech1", "Tech2"]
             }}
         ],
-        "hiring_recommendation": "Strong Hire | Hire | Borderline | No Hire",
-        "hiring_explanation": "Detailed explanation of the hiring decision."
+        "hiring_recommendation": "{expected_decision}",
+        "hiring_explanation": "Detailed reasoning that references the ATS score of {ats_score}% and key matched/missing skills."
     }}
 
-    Return only valid JSON. Do not include markdown code blocks like ```json.
+    Return only valid JSON. No markdown code blocks.
     """
 
     try:
@@ -129,21 +158,29 @@ def get_llm_analysis(resume_text: str, jd_text: str, score_details: Dict[str, An
             if key not in analysis:
                 analysis[key] = [] if key in ["strengths", "weaknesses", "suggestions", "recommended_projects"] else "Not provided"
 
+        # Always enforce score-based hiring decision — LLM sometimes drifts
+        analysis["hiring_recommendation"] = expected_decision
+
         return analysis
 
     except Exception as e:
         print(f"Error calling Gemini API: {e}")
+        decision = _score_to_decision(ats_score)
         return {
-            "strengths": ["Resume parsed successfully. Detailed analysis failed due to API error."],
-            "weaknesses": ["Could not complete qualitative analysis."],
-            "suggestions": ["Verify your API key is active and has quota remaining."],
+            "strengths": ["Resume parsed and ATS score calculated successfully."],
+            "weaknesses": ["Qualitative AI analysis unavailable — API quota may be exhausted."],
+            "suggestions": ["Verify your Gemini API key is active and has remaining quota."],
             "recommended_projects": [
                 {
                     "title": "Portfolio Showcase App",
-                    "description": "Build a responsive portfolio to highlight your current skill set.",
-                    "tech_stack": list(score_details.get("matched_skills", ["Python"]))[:3]
+                    "description": "Build a responsive portfolio to highlight your current skill set and bridge missing skills.",
+                    "tech_stack": list(score_details.get("matched_skills", ["Python"]))[:4]
                 }
             ],
-            "hiring_recommendation": "Borderline",
-            "hiring_explanation": f"LLM analysis failed: {str(e)}. Code-based ATS analysis succeeded."
+            "hiring_recommendation": decision,
+            "hiring_explanation": (
+                f"ATS Score: {ats_score}% → Tier: {decision}. "
+                f"(AI explanation unavailable — {str(e).split('.')[0]}. "
+                f"Code-based ATS analysis completed successfully.)"
+            )
         }
