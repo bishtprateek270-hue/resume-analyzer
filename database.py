@@ -14,7 +14,7 @@ except ImportError:
 
 DB_PATH = "resume_analyzer.db"
 DATABASE_URL = os.getenv("DATABASE_URL", "")
-IS_POSTGRES = HAS_POSTGRES_LIB and len(DATABASE_URL.strip()) > 0
+IS_POSTGRES = HAS_POSTGRES_LIB and DATABASE_URL.strip().startswith(("postgresql://", "postgres://"))
 
 def get_db_connection():
     """
