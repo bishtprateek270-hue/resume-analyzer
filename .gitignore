@@ -1,0 +1,27 @@
+# Virtual environment
+venv/
+.venv/
+ENV/
+env/
+
+# Environment configurations & keys
+.env
+.env.*
+
+# Local databases
+*.db
+*.sqlite3
+
+# Python cache & compiles
+__pycache__/
+*.py[cod]
+*$py.class
+
+# IDE configurations
+.vscode/
+.idea/
+.agents/
+
+# Streamlit local cache
+.streamlit/
+*.log
