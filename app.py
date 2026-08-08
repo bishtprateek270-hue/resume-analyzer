@@ -56,37 +56,36 @@ st.markdown("""
         width: 0px !important;
     }
 
-    /* Hide bottom right "Manage app" button and all Streamlit viewer badges */
+    /* Hide bottom right "Manage app" button and Streamlit viewer badges */
     footer,
+    [data-testid="stAppViewerFooter"],
     .stAppViewerFooter,
     div[class*="stAppViewerFooter"],
     div[class*="viewerBadge"],
-    div[class*="stActionButton"],
     button[title="Manage app"],
-    [data-testid="stStatusWidget"],
-    div[data-testid="stDecoration"],
-    #stDecoration,
-    div[class*="Widget"],
-    div[class*="FloatingButton"],
-    div[class*="stBottom"],
-    div[class*="manageApp"],
+    button[aria-label="Manage app"],
+    div[aria-label="Manage app"],
     .viewerBadge_container__1S-5D,
     .viewerBadge_link__1S-5D,
-    div[aria-label="Manage app"],
-    button[aria-label="Manage app"],
-    iframe[title="streamlit-badge"],
-    div[class*="ViewerFooter"],
-    div[class*="viewerFooter"],
-    section[data-testid="stSidebar"] + div button,
-    section[data-testid="stSidebar"] ~ div button,
-    [data-testid="stAppViewContainer"] ~ div,
-    [data-testid="stAppViewContainer"] + div {
+    div[data-testid="stDecoration"],
+    #stDecoration,
+    [data-testid="stStatusWidget"] {
         display: none !important;
         visibility: hidden !important;
         opacity: 0 !important;
         pointer-events: none !important;
-        height: 0px !important;
-        width: 0px !important;
+    }
+
+    /* Force all form submit buttons and standard buttons to be visible and styled */
+    [data-testid="stFormSubmitButton"],
+    [data-testid="stFormSubmitButton"] button,
+    div.stFormSubmitButton > button,
+    .stButton > button {
+        display: inline-block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        pointer-events: auto !important;
+        cursor: pointer !important;
     }
 
     /* CSS Variables - overridden by theme block below */
@@ -293,11 +292,17 @@ if _DARK:
         }
         [data-testid="stTabs"] { background-color: transparent !important; }
 
-        /* ── Buttons ── */
+        /* ── Primary & Form Submit Buttons in Dark Mode ── */
+        [data-testid="stFormSubmitButton"] button,
+        div.stFormSubmitButton > button,
         button[kind="primary"], button[data-testid="baseButton-primary"] {
             background-color: #0284C7 !important;
             color: #FFFFFF !important;
             border: none !important;
+            font-weight: 700 !important;
+            border-radius: 8px !important;
+            padding: 10px 16px !important;
+            width: 100% !important;
         }
         button[kind="secondary"], button[data-testid="baseButton-secondary"] {
             background-color: #1E293B !important;
@@ -442,13 +447,21 @@ else:
         }
         [data-testid="stTabs"] { background-color: transparent !important; }
 
-        /* ── Primary Buttons in Light Mode ── */
+        /* ── Primary & Form Submit Buttons in Light Mode ── */
+        [data-testid="stFormSubmitButton"] button,
+        div.stFormSubmitButton > button,
         button[kind="primary"], button[data-testid="baseButton-primary"] {
             background-color: #0284C7 !important;
             color: #FFFFFF !important;
             border: none !important;
             font-weight: 700 !important;
+            border-radius: 8px !important;
+            padding: 10px 16px !important;
+            width: 100% !important;
+            box-shadow: 0 2px 6px rgba(2, 132, 199, 0.2) !important;
         }
+        [data-testid="stFormSubmitButton"] button:hover,
+        div.stFormSubmitButton > button:hover,
         button[kind="primary"]:hover, button[data-testid="baseButton-primary"]:hover {
             background-color: #0369A1 !important;
             color: #FFFFFF !important;
