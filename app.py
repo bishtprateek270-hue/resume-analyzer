@@ -38,6 +38,12 @@ st.markdown("""
     @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
     html, body, [class*="css"] { font-family: 'Plus Jakarta Sans', sans-serif; }
 
+    /* Fast snappy transitions globally */
+    *, button, a, input, textarea, select, .metric-card, [data-baseweb="tab"] {
+        transition-duration: 0.05s !important;
+        transition-timing-function: ease-in-out !important;
+    }
+
     /* Hide top right header toolbar, GitHub icon, Star, Edit, Share, and 3-dots Menu */
     header[data-testid="stHeader"],
     div[data-testid="stHeader"],
@@ -47,9 +53,10 @@ st.markdown("""
         display: none !important;
         visibility: hidden !important;
         height: 0px !important;
+        width: 0px !important;
     }
 
-    /* Hide bottom right "Manage app" button and Streamlit viewer badges */
+    /* Hide bottom right "Manage app" button and all Streamlit viewer badges */
     footer,
     .stAppViewerFooter,
     div[class*="stAppViewerFooter"],
@@ -58,10 +65,28 @@ st.markdown("""
     button[title="Manage app"],
     [data-testid="stStatusWidget"],
     div[data-testid="stDecoration"],
-    #stDecoration {
+    #stDecoration,
+    div[class*="Widget"],
+    div[class*="FloatingButton"],
+    div[class*="stBottom"],
+    div[class*="manageApp"],
+    .viewerBadge_container__1S-5D,
+    .viewerBadge_link__1S-5D,
+    div[aria-label="Manage app"],
+    button[aria-label="Manage app"],
+    iframe[title="streamlit-badge"],
+    div[class*="ViewerFooter"],
+    div[class*="viewerFooter"],
+    section[data-testid="stSidebar"] + div button,
+    section[data-testid="stSidebar"] ~ div button,
+    [data-testid="stAppViewContainer"] ~ div,
+    [data-testid="stAppViewContainer"] + div {
         display: none !important;
         visibility: hidden !important;
         opacity: 0 !important;
+        pointer-events: none !important;
+        height: 0px !important;
+        width: 0px !important;
     }
 
     /* CSS Variables - overridden by theme block below */
@@ -98,7 +123,6 @@ st.markdown("""
         padding: 22px;
         margin-bottom: 14px;
         box-shadow: var(--card-shadow);
-        transition: transform 0.15s ease, box-shadow 0.15s ease;
         color: var(--card-text);
     }
     .metric-card:hover { transform: translateY(-2px); }
@@ -165,7 +189,7 @@ _DARK = st.session_state.dark_mode
 if _DARK:
     _theme_css = """
     <style>
-        /* === DARK THEME — overrides the base=light from config.toml === */
+        /* === DARK THEME === */
         :root {
             --card-bg: #1E293B;
             --card-border: #334155;
@@ -192,12 +216,24 @@ if _DARK:
             border-right: 1px solid #334155 !important;
         }
 
-        /* ── All text ── */
+        /* ── Headings & Text ── */
         .stApp h1, .stApp h2, .stApp h3,
-        .stApp h4, .stApp h5, .stApp h6 { color: #F1F5F9 !important; }
+        .stApp h4, .stApp h5, .stApp h6,
+        .stMarkdown h1, .stMarkdown h2, .stMarkdown h3,
+        .stMarkdown h4, .stMarkdown h5, .stMarkdown h6 { color: #F1F5F9 !important; }
+        
         .stApp p, .stApp label,
-        .stApp li, .stApp small,
-        .stApp .stMarkdown { color: #CBD5E1 !important; }
+        .stApp li, .stApp small, .stApp span,
+        .stMarkdown p, .stMarkdown label, .stMarkdown span { color: #CBD5E1 !important; }
+
+        section[data-testid="stSidebar"] h1,
+        section[data-testid="stSidebar"] h2,
+        section[data-testid="stSidebar"] h3,
+        section[data-testid="stSidebar"] h4,
+        section[data-testid="stSidebar"] p,
+        section[data-testid="stSidebar"] label,
+        section[data-testid="stSidebar"] span,
+        section[data-testid="stSidebar"] .stMarkdown { color: #F1F5F9 !important; }
 
         /* ── Text inputs & textareas ── */
         .stTextInput input,
@@ -211,16 +247,17 @@ if _DARK:
             border: 1.5px solid #475569 !important;
             border-radius: 8px !important;
         }
+        .stTextInput input::placeholder,
+        .stTextArea textarea::placeholder { color: #64748B !important; }
         .stTextInput input:focus,
         .stTextArea textarea:focus {
             border-color: #38BDF8 !important;
             box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2) !important;
         }
-        /* Input labels */
         .stTextInput label,
         .stTextArea label,
         .stFileUploader label,
-        .stSelectbox label { color: #94A3B8 !important; }
+        .stSelectbox label { color: #CBD5E1 !important; font-weight: 600 !important; }
 
         /* ── File uploader ── */
         [data-testid="stFileUploaderDropzone"] {
@@ -249,18 +286,24 @@ if _DARK:
         [data-testid="stExpander"] p { color: #CBD5E1 !important; }
 
         /* ── Tabs ── */
-        button[data-baseweb="tab"] { color: #94A3B8 !important; }
+        button[data-baseweb="tab"] { color: #94A3B8 !important; font-weight: 600 !important; }
         button[data-baseweb="tab"][aria-selected="true"] {
             color: #38BDF8 !important;
             border-bottom-color: #38BDF8 !important;
         }
         [data-testid="stTabs"] { background-color: transparent !important; }
 
-        /* ── Secondary buttons ── */
+        /* ── Buttons ── */
+        button[kind="primary"], button[data-testid="baseButton-primary"] {
+            background-color: #0284C7 !important;
+            color: #FFFFFF !important;
+            border: none !important;
+        }
         button[kind="secondary"], button[data-testid="baseButton-secondary"] {
             background-color: #1E293B !important;
             color: #F1F5F9 !important;
-            border: 1px solid #475569 !important;
+            border: 1.5px solid #475569 !important;
+            font-weight: 500 !important;
         }
         button[kind="secondary"]:hover, button[data-testid="baseButton-secondary"]:hover {
             border-color: #38BDF8 !important;
@@ -268,87 +311,176 @@ if _DARK:
             background-color: #0F172A !important;
         }
 
-        /* ── Info / success / warning / error boxes ── */
+        /* ── Alerts ── */
         [data-testid="stAlert"] {
             background-color: #1E293B !important;
             color: #CBD5E1 !important;
             border: 1px solid #334155 !important;
         }
-
-        /* ── Dividers ── */
         hr { border-color: #334155 !important; }
     </style>
     """
 else:
     _theme_css = """
     <style>
-        /* === LIGHT THEME === */
+        /* === LIGHT THEME — HIGH CONTRAST & CLEAR VISIBILITY === */
         :root {
             --card-bg: #FFFFFF;
-            --card-border: #E2E8F0;
-            --card-shadow: 0 2px 12px rgba(0,0,0,0.04);
+            --card-border: #CBD5E1;
+            --card-shadow: 0 2px 12px rgba(0,0,0,0.06);
             --card-text: #0F172A;
-            --card-sub: #475569;
-            --card-heading: #1E293B;
-            --circle-ring: #F1F5F9;
-            --divider: #F1F5F9;
+            --card-sub: #334155;
+            --card-heading: #0F172A;
+            --circle-ring: #E2E8F0;
+            --divider: #E2E8F0;
         }
-        .stApp { background-color: #F8FAFC !important; }
-        section[data-testid="stSidebar"] { background-color: #FFFFFF !important; }
 
-        /* ── Text inputs & textareas ── */
+        .stApp,
+        .stApp > div,
+        [data-testid="stAppViewContainer"],
+        [data-testid="stMain"],
+        [data-testid="stMainBlockContainer"] {
+            background-color: #F8FAFC !important;
+            color: #0F172A !important;
+        }
+
+        section[data-testid="stSidebar"],
+        section[data-testid="stSidebar"] > div {
+            background-color: #FFFFFF !important;
+            border-right: 1.5px solid #E2E8F0 !important;
+        }
+
+        /* ── Headings & Text in Light Mode ── */
+        .stApp h1, .stApp h2, .stApp h3,
+        .stApp h4, .stApp h5, .stApp h6,
+        .stMarkdown h1, .stMarkdown h2, .stMarkdown h3,
+        .stMarkdown h4, .stMarkdown h5, .stMarkdown h6 {
+            color: #0F172A !important;
+            font-weight: 700 !important;
+        }
+
+        .stApp p, .stApp label,
+        .stApp li, .stApp small, .stApp span,
+        .stMarkdown p, .stMarkdown label, .stMarkdown span {
+            color: #334155 !important;
+        }
+
+        /* Sidebar Specific Text and Titles in Light Mode */
+        section[data-testid="stSidebar"] h1,
+        section[data-testid="stSidebar"] h2,
+        section[data-testid="stSidebar"] h3,
+        section[data-testid="stSidebar"] h4,
+        section[data-testid="stSidebar"] p,
+        section[data-testid="stSidebar"] label,
+        section[data-testid="stSidebar"] span,
+        section[data-testid="stSidebar"] .stMarkdown {
+            color: #0F172A !important;
+        }
+
+        /* ── Text inputs & textareas in Light Mode ── */
         .stTextInput input,
         .stTextArea textarea,
         [data-baseweb="input"] input,
-        [data-baseweb="textarea"] textarea {
+        [data-baseweb="textarea"] textarea,
+        [data-baseweb="base-input"] input,
+        [data-baseweb="base-input"] textarea {
             background-color: #FFFFFF !important;
             color: #0F172A !important;
-            border: 1.5px solid #CBD5E1 !important;
+            border: 1.5px solid #94A3B8 !important;
             border-radius: 8px !important;
         }
+
+        .stTextInput input::placeholder,
+        .stTextArea textarea::placeholder {
+            color: #64748B !important;
+        }
+
         .stTextInput input:focus,
         .stTextArea textarea:focus {
             border-color: #0284C7 !important;
             box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15) !important;
         }
 
-        /* ── File uploader ── */
-        [data-testid="stFileUploaderDropzone"] {
-            background-color: #F8FAFC !important;
-            border: 2px dashed #CBD5E1 !important;
-            border-radius: 10px !important;
+        /* Input labels in Light Mode */
+        .stTextInput label,
+        .stTextArea label,
+        .stFileUploader label,
+        .stSelectbox label {
+            color: #0F172A !important;
+            font-weight: 700 !important;
         }
 
-        /* ── Select / dropdown ── */
+        /* ── File uploader dropzone in Light Mode ── */
+        [data-testid="stFileUploaderDropzone"] {
+            background-color: #FFFFFF !important;
+            border: 2px dashed #94A3B8 !important;
+            border-radius: 10px !important;
+        }
+        [data-testid="stFileUploaderDropzone"] p,
+        [data-testid="stFileUploaderDropzone"] span,
+        [data-testid="stFileUploaderDropzone"] small {
+            color: #334155 !important;
+            font-weight: 500 !important;
+        }
+
+        /* ── Select / dropdown in Light Mode ── */
         [data-baseweb="select"] > div {
             background-color: #FFFFFF !important;
             color: #0F172A !important;
-            border: 1.5px solid #CBD5E1 !important;
+            border: 1.5px solid #94A3B8 !important;
         }
 
-        /* ── Secondary buttons ── */
+        /* ── Tabs in Light Mode ── */
+        button[data-baseweb="tab"] {
+            color: #475569 !important;
+            font-weight: 700 !important;
+            font-size: 1rem !important;
+        }
+        button[data-baseweb="tab"][aria-selected="true"] {
+            color: #0284C7 !important;
+            border-bottom-color: #0284C7 !important;
+        }
+        [data-testid="stTabs"] { background-color: transparent !important; }
+
+        /* ── Primary Buttons in Light Mode ── */
+        button[kind="primary"], button[data-testid="baseButton-primary"] {
+            background-color: #0284C7 !important;
+            color: #FFFFFF !important;
+            border: none !important;
+            font-weight: 700 !important;
+        }
+        button[kind="primary"]:hover, button[data-testid="baseButton-primary"]:hover {
+            background-color: #0369A1 !important;
+            color: #FFFFFF !important;
+        }
+
+        /* ── Secondary Buttons in Light Mode ── */
         button[kind="secondary"], button[data-testid="baseButton-secondary"] {
             background-color: #FFFFFF !important;
-            color: #1E293B !important;
+            color: #0F172A !important;
             border: 1.5px solid #CBD5E1 !important;
+            font-weight: 600 !important;
         }
         button[kind="secondary"]:hover, button[data-testid="baseButton-secondary"]:hover {
             border-color: #0284C7 !important;
             color: #0284C7 !important;
             background-color: #EFF6FF !important;
         }
-        /* Sidebar nav buttons specifically */
+
+        /* Sidebar Navigation Buttons in Light Mode */
         section[data-testid="stSidebar"] button[data-testid="baseButton-secondary"] {
-            background-color: #F8FAFC !important;
-            color: #334155 !important;
+            background-color: #F1F5F9 !important;
+            color: #0F172A !important;
             border: 1.5px solid #CBD5E1 !important;
+            font-weight: 700 !important;
         }
         section[data-testid="stSidebar"] button[data-testid="baseButton-secondary"]:hover {
-            background-color: #EFF6FF !important;
+            background-color: #E0F2FE !important;
             border-color: #0284C7 !important;
             color: #0284C7 !important;
         }
 
+        hr { border-color: #E2E8F0 !important; }
     </style>
     """
 
@@ -366,8 +498,8 @@ def handle_logout():
 
 # ----------------- AUTHENTICATION VIEWS -----------------
 def render_login_register():
-    st.markdown('<h1 style="text-align: center; font-weight:800; margin-top: 50px;">🔍 AI Resume Analyzer</h1>', unsafe_allow_html=True)
-    st.markdown('<p style="text-align: center; color: #64748B;">Upload resumes, evaluate ATS fit, get bridging projects suggestions, and download PDF reports.</p>', unsafe_allow_html=True)
+    st.markdown('<h1 style="text-align: center; font-weight:800; margin-top: 30px;">🔍 AI Resume Analyzer</h1>', unsafe_allow_html=True)
+    st.markdown('<p style="text-align: center; font-size: 1rem; font-weight: 500;">Upload resumes, evaluate ATS fit, get bridging projects suggestions, and download PDF reports.</p>', unsafe_allow_html=True)
     
     tab1, tab2 = st.tabs(["🔑 Login", "📝 Register"])
     
@@ -400,7 +532,20 @@ def render_login_register():
             if submit:
                 success, msg = auth.register_user(reg_username, reg_email, reg_password)
                 if success:
-                    st.success(msg)
+                    # Auto-login immediately upon registration and land on dashboard
+                    user_data = database.get_user(reg_username)
+                    if user_data:
+                        st.session_state.logged_in = True
+                        st.session_state.user = {
+                            "id": user_data["id"],
+                            "username": user_data["username"],
+                            "email": user_data["email"]
+                        }
+                        st.query_params["session_token"] = generate_session_token(user_data["username"])
+                        st.success("🎉 Account created successfully! Logging you in...")
+                        st.rerun()
+                    else:
+                        st.success(msg)
                 else:
                     st.error(msg)
 
