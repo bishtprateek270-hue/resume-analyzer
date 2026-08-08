@@ -1,0 +1,29 @@
+name: Streamlit App Keep Alive
+
+on:
+  schedule:
+    # Runs every 3 days at 00:00 UTC (Streamlit sleeps after 7 days of inactivity)
+    - cron: '0 0 */3 * *'
+  workflow_dispatch: # Allows manual triggering from the GitHub Actions tab
+
+jobs:
+  keep-alive:
+    name: Wake & Maintain Streamlit App
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Playwright & Dependencies
+        run: |
+          pip install playwright
+          playwright install chromium --with-deps
+
+      - name: Run Keep Alive Script
+        run: python scripts/keep_alive.py
