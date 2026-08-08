@@ -83,10 +83,31 @@ Secrets (`GEMINI_API_KEY` and `DATABASE_URL`) are configured via Streamlit Cloud
 
 ---
 
+## ⏰ Automated Keep-Alive (Prevent Streamlit Sleep)
+
+Streamlit Community Cloud automatically hibernates free apps after **7 days of inactivity** (displaying a `"Zzzz - This app has gone to sleep"` page). 
+
+To solve this issue permanently and keep the live app awake 24/7, this repository includes an automated **GitHub Actions Workflow** using Playwright:
+
+* 🤖 **Playwright Wake Script** — [`scripts/keep_alive.py`](scripts/keep_alive.py) launches a headless browser, visits the live app, and automatically clicks the *"Yes, get this app back up!"* button if the app is sleeping.
+* 📅 **Scheduled Cron Job** — [`.github/workflows/keep_alive.yml`](.github/workflows/keep_alive.yml) runs every 3 days (`0 0 */3 * *`) to stay ahead of Streamlit's 7-day hibernation threshold.
+* 🔘 **Manual Trigger** — Supports `workflow_dispatch` so you can wake up the app anytime on-demand from the GitHub Actions tab.
+
+### 🛠️ How to use this solution in your own Streamlit app:
+1. Copy [`.github/workflows/keep_alive.yml`](.github/workflows/keep_alive.yml) and [`scripts/keep_alive.py`](scripts/keep_alive.py) to your repo.
+2. Update the `APP_URL` variable in `scripts/keep_alive.py` with your Streamlit Cloud URL.
+3. Push to GitHub — your app will now stay awake 24/7 automatically!
+
+---
+
 ## 📁 Project Structure
 
 ```
 resume-analyzer/
+├── .github/workflows/
+│   └── keep_alive.yml  # GitHub Actions workflow for keeping Streamlit awake
+├── scripts/
+│   └── keep_alive.py    # Playwright headless browser wake-up script
 ├── app.py              # Main Streamlit application
 ├── analyzer.py         # ATS scoring algorithm
 ├── llm_helper.py       # Gemini LLM integration
