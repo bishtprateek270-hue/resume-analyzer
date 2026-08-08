@@ -21,7 +21,12 @@ st.set_page_config(
     page_title="AI Resume Analyzer & ATS Optimizer",
     page_icon="🔍",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="expanded",
+    menu_items={
+        'Get Help': None,
+        'Report a bug': None,
+        'About': None
+    }
 )
 
 # Initialize database
@@ -32,6 +37,32 @@ st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
     html, body, [class*="css"] { font-family: 'Plus Jakarta Sans', sans-serif; }
+
+    /* Hide top right header toolbar, GitHub icon, Star, Edit, Share, and 3-dots Menu */
+    header[data-testid="stHeader"],
+    div[data-testid="stHeader"],
+    div[data-testid="stToolbar"],
+    #MainMenu,
+    header {
+        display: none !important;
+        visibility: hidden !important;
+        height: 0px !important;
+    }
+
+    /* Hide bottom right "Manage app" button and Streamlit viewer badges */
+    footer,
+    .stAppViewerFooter,
+    div[class*="stAppViewerFooter"],
+    div[class*="viewerBadge"],
+    div[class*="stActionButton"],
+    button[title="Manage app"],
+    [data-testid="stStatusWidget"],
+    div[data-testid="stDecoration"],
+    #stDecoration {
+        display: none !important;
+        visibility: hidden !important;
+        opacity: 0 !important;
+    }
 
     /* CSS Variables - overridden by theme block below */
     :root {
