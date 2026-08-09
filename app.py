@@ -1,4 +1,5 @@
 import streamlit as st
+import streamlit.components.v1 as components
 import os
 import json
 import hashlib
@@ -31,107 +32,6 @@ st.set_page_config(
 
 # Initialize database
 database.init_db()
-
-# Base CSS (always applied, theme-agnostic)
-st.markdown("""
-<style>
-    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
-    html, body, [class*="css"] { font-family: 'Plus Jakarta Sans', sans-serif; }
-
-    /* Fast snappy transitions globally */
-    *, button, a, input, textarea, select, .metric-card, [data-baseweb="tab"] {
-        transition-duration: 0.05s !important;
-        transition-timing-function: ease-in-out !important;
-    }
-
-    /* Hide top right header toolbar, GitHub icon, Star, Edit, Share, and 3-dots Menu */
-    header[data-testid="stHeader"],
-    div[data-testid="stHeader"],
-    div[data-testid="stToolbar"],
-    #MainMenu,
-    header {
-        display: none !important;
-        visibility: hidden !important;
-        height: 0px !important;
-        width: 0px !important;
-    }
-
-    /* Hide bottom right "Manage app" button and Streamlit viewer badges */
-    footer,
-    [data-testid="stAppViewerFooter"],
-    .stAppViewerFooter,
-    div[class*="stAppViewerFooter"],
-    div[class*="viewerBadge"],
-    button[title="Manage app"],
-    button[aria-label="Manage app"],
-    div[aria-label="Manage app"],
-    .viewerBadge_container__1S-5D,
-    .viewerBadge_link__1S-5D,
-    div[data-testid="stDecoration"],
-    #stDecoration,
-    [data-testid="stStatusWidget"] {
-        display: none !important;
-        visibility: hidden !important;
-        opacity: 0 !important;
-        pointer-events: none !important;
-    }
-
-    /* Force all form submit buttons and standard buttons to be visible and styled */
-    [data-testid="stFormSubmitButton"],
-    [data-testid="stFormSubmitButton"] button,
-    div.stFormSubmitButton > button,
-    .stButton > button {
-        display: inline-block !important;
-        visibility: visible !important;
-        opacity: 1 !important;
-        pointer-events: auto !important;
-        cursor: pointer !important;
-    }
-
-    /* CSS Variables - overridden by theme block below */
-    :root {
-        --card-bg: #FFFFFF;
-        --card-border: #E2E8F0;
-        --card-shadow: 0 2px 12px rgba(0,0,0,0.04);
-        --card-text: #0F172A;
-        --card-sub: #475569;
-        --card-heading: #1E293B;
-        --circle-ring: #F1F5F9;
-        --divider: #F1F5F9;
-    }
-
-    /* Tags */
-    .tag { display: inline-block; padding: 5px 12px; border-radius: 9999px; font-size: 0.82rem; font-weight: 600; margin: 3px; }
-    .tag-matched { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
-    .tag-missing { background: #fef9c3; color: #713f12; border: 1px solid #fef08a; }
-    .tag-section  { background: #e0f2fe; color: #075985; border: 1px solid #bae6fd; }
-
-    /* Score Circle */
-    .score-circle {
-        display: flex; align-items: center; justify-content: center;
-        width: 130px; height: 130px; border-radius: 50%;
-        margin: 0 auto 12px auto; font-size: 2rem; font-weight: 800;
-        box-shadow: inset 0 0 0 10px var(--circle-ring);
-    }
-
-    /* Cards - use CSS variables so dark mode can override */
-    .metric-card {
-        background: var(--card-bg);
-        border: 1px solid var(--card-border);
-        border-radius: 14px;
-        padding: 22px;
-        margin-bottom: 14px;
-        box-shadow: var(--card-shadow);
-        color: var(--card-text);
-    }
-    .metric-card:hover { transform: translateY(-2px); }
-    .metric-card h4 { color: var(--card-heading) !important; margin-top: 0; }
-    .metric-card p  { color: var(--card-sub) !important; }
-
-    /* Feedback rows */
-    .feedback-item { padding: 7px 0; border-bottom: 1px solid var(--divider); }
-</style>
-""", unsafe_allow_html=True)
 
 # ----------------- SESSION STATE SETUP & AUTO-LOGIN -----------------
 SECRET_KEY = "super_secret_resume_analyzer_key_123"
@@ -183,321 +83,401 @@ if not st.session_state.logged_in:
                     "email": user_info["email"]
                 }
 
-_DARK = st.session_state.dark_mode
+# Base & Theme CSS (CSS Variables for Instant Zero-Delay Client-Side Switching)
+_current_theme = "dark" if st.session_state.get("dark_mode", False) else "light"
 
-if _DARK:
-    _theme_css = """
-    <style>
-        /* === DARK THEME === */
-        :root {
-            --card-bg: #1E293B;
-            --card-border: #334155;
-            --card-shadow: 0 4px 20px rgba(0,0,0,0.3);
-            --card-text: #F1F5F9;
-            --card-sub: #94A3B8;
-            --card-heading: #E2E8F0;
-            --circle-ring: #334155;
-            --divider: #334155;
-        }
+st.markdown(r"""
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+    
+    /* Global Typography */
+    html, body, [class*="css"] { font-family: 'Plus Jakarta Sans', sans-serif; }
 
-        /* ── App & Sidebar background ── */
-        .stApp,
-        .stApp > div,
-        [data-testid="stAppViewContainer"],
-        [data-testid="stMain"],
-        [data-testid="stMainBlockContainer"] {
-            background-color: #0F172A !important;
-            color: #F1F5F9 !important;
-        }
-        section[data-testid="stSidebar"],
-        section[data-testid="stSidebar"] > div {
-            background-color: #1E293B !important;
-            border-right: 1px solid #334155 !important;
-        }
+    /* ==================== LIGHT THEME (DEFAULT) ==================== */
+    :root,
+    html[data-theme="light"],
+    body[data-theme="light"],
+    .stApp[data-theme="light"] {
+        --bg-app: #F8FAFC;
+        --bg-card: #FFFFFF;
+        --bg-sidebar: #FFFFFF;
+        --border-card: #CBD5E1;
+        --border-sidebar: #E2E8F0;
+        --border-input: #94A3B8;
+        --shadow-card: 0 2px 12px rgba(0,0,0,0.06);
+        --text-heading: #0F172A;
+        --text-main: #0F172A;
+        --text-sub: #334155;
+        --text-muted: #64748B;
+        --circle-ring: #E2E8F0;
+        --divider: #E2E8F0;
+        --input-bg: #FFFFFF;
+        --dropzone-bg: #FFFFFF;
+        --expander-bg: #FFFFFF;
+        --expander-border: #E2E8F0;
+        --btn-sec-bg: #FFFFFF;
+        --btn-sec-text: #0F172A;
+        --btn-sec-border: #CBD5E1;
+        --btn-sec-hover-bg: #EFF6FF;
+        --btn-sec-hover-text: #0284C7;
+        --btn-sec-hover-border: #0284C7;
+        --sidebar-btn-bg: #F1F5F9;
+        --sidebar-btn-text: #0F172A;
+        --sidebar-btn-border: #CBD5E1;
+        --sidebar-btn-hover-bg: #E0F2FE;
+        --sidebar-btn-hover-text: #0284C7;
+        --sidebar-btn-hover-border: #0284C7;
+        --tab-text: #475569;
+        --tab-active: #0284C7;
+        --alert-bg: #FFFFFF;
+        --alert-border: #CBD5E1;
+        --alert-text: #334155;
+        --tag-matched-bg: #dcfce7;
+        --tag-matched-text: #166534;
+        --tag-matched-border: #bbf7d0;
+        --tag-missing-bg: #fef9c3;
+        --tag-missing-text: #713f12;
+        --tag-missing-border: #fef08a;
+        --tag-section-bg: #e0f2fe;
+        --tag-section-text: #075985;
+        --tag-section-border: #bae6fd;
+    }
 
-        /* ── Headings & Text ── */
-        .stApp h1, .stApp h2, .stApp h3,
-        .stApp h4, .stApp h5, .stApp h6,
-        .stMarkdown h1, .stMarkdown h2, .stMarkdown h3,
-        .stMarkdown h4, .stMarkdown h5, .stMarkdown h6 { color: #F1F5F9 !important; }
-        
-        .stApp p, .stApp label,
-        .stApp li, .stApp small, .stApp span,
-        .stMarkdown p, .stMarkdown label, .stMarkdown span { color: #CBD5E1 !important; }
+    /* ==================== DARK THEME ==================== */
+    html[data-theme="dark"],
+    body[data-theme="dark"],
+    .stApp[data-theme="dark"],
+    [data-theme="dark"] {
+        --bg-app: #0F172A !important;
+        --bg-card: #1E293B !important;
+        --bg-sidebar: #1E293B !important;
+        --border-card: #334155 !important;
+        --border-sidebar: #334155 !important;
+        --border-input: #475569 !important;
+        --shadow-card: 0 4px 20px rgba(0,0,0,0.3) !important;
+        --text-heading: #F1F5F9 !important;
+        --text-main: #F1F5F9 !important;
+        --text-sub: #CBD5E1 !important;
+        --text-muted: #94A3B8 !important;
+        --circle-ring: #334155 !important;
+        --divider: #334155 !important;
+        --input-bg: #1E293B !important;
+        --dropzone-bg: #1E293B !important;
+        --expander-bg: #1E293B !important;
+        --expander-border: #334155 !important;
+        --btn-sec-bg: #1E293B !important;
+        --btn-sec-text: #F1F5F9 !important;
+        --btn-sec-border: #475569 !important;
+        --btn-sec-hover-bg: #0F172A !important;
+        --btn-sec-hover-text: #38BDF8 !important;
+        --btn-sec-hover-border: #38BDF8 !important;
+        --sidebar-btn-bg: #1E293B !important;
+        --sidebar-btn-text: #F1F5F9 !important;
+        --sidebar-btn-border: #475569 !important;
+        --sidebar-btn-hover-bg: #0F172A !important;
+        --sidebar-btn-hover-text: #38BDF8 !important;
+        --sidebar-btn-hover-border: #38BDF8 !important;
+        --tab-text: #94A3B8 !important;
+        --tab-active: #38BDF8 !important;
+        --alert-bg: #1E293B !important;
+        --alert-border: #334155 !important;
+        --alert-text: #CBD5E1 !important;
+        --tag-matched-bg: rgba(22, 101, 52, 0.35) !important;
+        --tag-matched-text: #4ade80 !important;
+        --tag-matched-border: rgba(74, 222, 128, 0.3) !important;
+        --tag-missing-bg: rgba(113, 63, 18, 0.35) !important;
+        --tag-missing-text: #facc15 !important;
+        --tag-missing-border: rgba(250, 204, 21, 0.3) !important;
+        --tag-section-bg: rgba(7, 89, 133, 0.35) !important;
+        --tag-section-text: #38bdf8 !important;
+        --tag-section-border: rgba(56, 189, 248, 0.3) !important;
+    }
 
-        section[data-testid="stSidebar"] h1,
-        section[data-testid="stSidebar"] h2,
-        section[data-testid="stSidebar"] h3,
-        section[data-testid="stSidebar"] h4,
-        section[data-testid="stSidebar"] p,
-        section[data-testid="stSidebar"] label,
-        section[data-testid="stSidebar"] span,
-        section[data-testid="stSidebar"] .stMarkdown { color: #F1F5F9 !important; }
+    /* Zero-delay instant theme switching & zero animations */
+    *, *::before, *::after {
+        transition: none !important;
+        animation: none !important;
+    }
 
-        /* ── Text inputs & textareas ── */
-        .stTextInput input,
-        .stTextArea textarea,
-        [data-baseweb="input"] input,
-        [data-baseweb="textarea"] textarea,
-        [data-baseweb="base-input"] input,
-        [data-baseweb="base-input"] textarea {
-            background-color: #1E293B !important;
-            color: #F1F5F9 !important;
-            border: 1.5px solid #475569 !important;
-            border-radius: 8px !important;
-        }
-        .stTextInput input::placeholder,
-        .stTextArea textarea::placeholder { color: #64748B !important; }
-        .stTextInput input:focus,
-        .stTextArea textarea:focus {
-            border-color: #38BDF8 !important;
-            box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2) !important;
-        }
-        .stTextInput label,
-        .stTextArea label,
-        .stFileUploader label,
-        .stSelectbox label { color: #CBD5E1 !important; font-weight: 600 !important; }
+    .instant-toggle-slider:before {
+        position: absolute;
+        content: "";
+        height: 16px;
+        width: 16px;
+        left: 3px;
+        bottom: 3px;
+        background-color: white;
+        border-radius: 50%;
+        transition: none !important;
+    }
+    input:checked + .instant-toggle-slider {
+        background-color: #0284C7 !important;
+    }
+    input:checked + .instant-toggle-slider:before {
+        transform: translateX(22px) !important;
+    }
 
-        /* ── File uploader ── */
-        [data-testid="stFileUploaderDropzone"] {
-            background-color: #1E293B !important;
-            border: 2px dashed #475569 !important;
-            border-radius: 10px !important;
-        }
-        [data-testid="stFileUploaderDropzone"] p,
-        [data-testid="stFileUploaderDropzone"] span { color: #94A3B8 !important; }
+    /* App & Sidebar background */
+    .stApp,
+    .stApp > div,
+    [data-testid="stAppViewContainer"],
+    [data-testid="stMain"],
+    [data-testid="stMainBlockContainer"] {
+        background-color: var(--bg-app) !important;
+        color: var(--text-main) !important;
+    }
 
-        /* ── Select / dropdown ── */
-        [data-baseweb="select"] > div,
-        [data-baseweb="popover"] { 
-            background-color: #1E293B !important;
-            color: #F1F5F9 !important;
-            border: 1.5px solid #475569 !important;
-        }
+    section[data-testid="stSidebar"],
+    section[data-testid="stSidebar"] > div {
+        background-color: var(--bg-sidebar) !important;
+        border-right: 1.5px solid var(--border-sidebar) !important;
+    }
 
-        /* ── Expanders ── */
-        [data-testid="stExpander"] {
-            background-color: #1E293B !important;
-            border: 1px solid #334155 !important;
-            border-radius: 8px !important;
-        }
-        [data-testid="stExpander"] summary,
-        [data-testid="stExpander"] p { color: #CBD5E1 !important; }
+    /* Hide top right header toolbar & footers */
+    header[data-testid="stHeader"],
+    div[data-testid="stHeader"],
+    div[data-testid="stToolbar"],
+    #MainMenu,
+    header,
+    footer,
+    [data-testid="stAppViewerFooter"],
+    .stAppViewerFooter,
+    div[class*="stAppViewerFooter"],
+    div[class*="viewerBadge"],
+    button[title="Manage app"],
+    button[aria-label="Manage app"],
+    div[aria-label="Manage app"],
+    .viewerBadge_container__1S-5D,
+    .viewerBadge_link__1S-5D,
+    div[data-testid="stDecoration"],
+    #stDecoration,
+    [data-testid="stStatusWidget"] {
+        display: none !important;
+        visibility: hidden !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+        height: 0px !important;
+        width: 0px !important;
+    }
 
-        /* ── Tabs ── */
-        button[data-baseweb="tab"] { color: #94A3B8 !important; font-weight: 600 !important; }
-        button[data-baseweb="tab"][aria-selected="true"] {
-            color: #38BDF8 !important;
-            border-bottom-color: #38BDF8 !important;
-        }
-        [data-testid="stTabs"] { background-color: transparent !important; }
+    /* Force all form submit buttons and standard buttons to be visible and styled */
+    [data-testid="stFormSubmitButton"],
+    [data-testid="stFormSubmitButton"] button,
+    div.stFormSubmitButton > button,
+    .stButton > button {
+        display: inline-block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        pointer-events: auto !important;
+        cursor: pointer !important;
+    }
 
-        /* ── Primary & Form Submit Buttons in Dark Mode ── */
-        [data-testid="stFormSubmitButton"] button,
-        div.stFormSubmitButton > button,
-        button[kind="primary"], button[data-testid="baseButton-primary"] {
-            background-color: #0284C7 !important;
-            color: #FFFFFF !important;
-            border: none !important;
-            font-weight: 700 !important;
-            border-radius: 8px !important;
-            padding: 10px 16px !important;
-            width: 100% !important;
-        }
-        button[kind="secondary"], button[data-testid="baseButton-secondary"] {
-            background-color: #1E293B !important;
-            color: #F1F5F9 !important;
-            border: 1.5px solid #475569 !important;
-            font-weight: 500 !important;
-        }
-        button[kind="secondary"]:hover, button[data-testid="baseButton-secondary"]:hover {
-            border-color: #38BDF8 !important;
-            color: #38BDF8 !important;
-            background-color: #0F172A !important;
-        }
+    /* Headings & Text */
+    .stApp h1, .stApp h2, .stApp h3,
+    .stApp h4, .stApp h5, .stApp h6,
+    .stMarkdown h1, .stMarkdown h2, .stMarkdown h3,
+    .stMarkdown h4, .stMarkdown h5, .stMarkdown h6,
+    section[data-testid="stSidebar"] h1,
+    section[data-testid="stSidebar"] h2,
+    section[data-testid="stSidebar"] h3,
+    section[data-testid="stSidebar"] h4 {
+        color: var(--text-heading) !important;
+        font-weight: 700 !important;
+    }
 
-        /* ── Alerts ── */
-        [data-testid="stAlert"] {
-            background-color: #1E293B !important;
-            color: #CBD5E1 !important;
-            border: 1px solid #334155 !important;
-        }
-        hr { border-color: #334155 !important; }
-    </style>
-    """
-else:
-    _theme_css = """
-    <style>
-        /* === LIGHT THEME — HIGH CONTRAST & CLEAR VISIBILITY === */
-        :root {
-            --card-bg: #FFFFFF;
-            --card-border: #CBD5E1;
-            --card-shadow: 0 2px 12px rgba(0,0,0,0.06);
-            --card-text: #0F172A;
-            --card-sub: #334155;
-            --card-heading: #0F172A;
-            --circle-ring: #E2E8F0;
-            --divider: #E2E8F0;
-        }
+    .stApp p, .stApp label,
+    .stApp li, .stApp small, .stApp span,
+    .stMarkdown p, .stMarkdown label, .stMarkdown span,
+    section[data-testid="stSidebar"] p,
+    section[data-testid="stSidebar"] label,
+    section[data-testid="stSidebar"] span,
+    section[data-testid="stSidebar"] .stMarkdown {
+        color: var(--text-sub) !important;
+    }
 
-        .stApp,
-        .stApp > div,
-        [data-testid="stAppViewContainer"],
-        [data-testid="stMain"],
-        [data-testid="stMainBlockContainer"] {
-            background-color: #F8FAFC !important;
-            color: #0F172A !important;
-        }
+    /* Text inputs & textareas */
+    .stTextInput input,
+    .stTextArea textarea,
+    [data-baseweb="input"] input,
+    [data-baseweb="textarea"] textarea,
+    [data-baseweb="base-input"] input,
+    [data-baseweb="base-input"] textarea {
+        background-color: var(--input-bg) !important;
+        color: var(--text-main) !important;
+        border: 1.5px solid var(--border-input) !important;
+        border-radius: 8px !important;
+    }
 
-        section[data-testid="stSidebar"],
-        section[data-testid="stSidebar"] > div {
-            background-color: #FFFFFF !important;
-            border-right: 1.5px solid #E2E8F0 !important;
-        }
+    .stTextInput input::placeholder,
+    .stTextArea textarea::placeholder {
+        color: var(--text-muted) !important;
+    }
 
-        /* ── Headings & Text in Light Mode ── */
-        .stApp h1, .stApp h2, .stApp h3,
-        .stApp h4, .stApp h5, .stApp h6,
-        .stMarkdown h1, .stMarkdown h2, .stMarkdown h3,
-        .stMarkdown h4, .stMarkdown h5, .stMarkdown h6 {
-            color: #0F172A !important;
-            font-weight: 700 !important;
-        }
+    .stTextInput input:focus,
+    .stTextArea textarea:focus {
+        border-color: #0284C7 !important;
+        box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.2) !important;
+    }
 
-        .stApp p, .stApp label,
-        .stApp li, .stApp small, .stApp span,
-        .stMarkdown p, .stMarkdown label, .stMarkdown span {
-            color: #334155 !important;
-        }
+    .stTextInput label,
+    .stTextArea label,
+    .stFileUploader label,
+    .stSelectbox label {
+        color: var(--text-heading) !important;
+        font-weight: 700 !important;
+    }
 
-        /* Sidebar Specific Text and Titles in Light Mode */
-        section[data-testid="stSidebar"] h1,
-        section[data-testid="stSidebar"] h2,
-        section[data-testid="stSidebar"] h3,
-        section[data-testid="stSidebar"] h4,
-        section[data-testid="stSidebar"] p,
-        section[data-testid="stSidebar"] label,
-        section[data-testid="stSidebar"] span,
-        section[data-testid="stSidebar"] .stMarkdown {
-            color: #0F172A !important;
-        }
+    /* File Uploader Dropzone */
+    [data-testid="stFileUploaderDropzone"] {
+        background-color: var(--dropzone-bg) !important;
+        border: 2px dashed var(--border-input) !important;
+        border-radius: 10px !important;
+    }
+    [data-testid="stFileUploaderDropzone"] p,
+    [data-testid="stFileUploaderDropzone"] span,
+    [data-testid="stFileUploaderDropzone"] small {
+        color: var(--text-sub) !important;
+        font-weight: 500 !important;
+    }
 
-        /* ── Text inputs & textareas in Light Mode ── */
-        .stTextInput input,
-        .stTextArea textarea,
-        [data-baseweb="input"] input,
-        [data-baseweb="textarea"] textarea,
-        [data-baseweb="base-input"] input,
-        [data-baseweb="base-input"] textarea {
-            background-color: #FFFFFF !important;
-            color: #0F172A !important;
-            border: 1.5px solid #94A3B8 !important;
-            border-radius: 8px !important;
-        }
+    /* Select / Dropdown */
+    [data-baseweb="select"] > div,
+    [data-baseweb="popover"] {
+        background-color: var(--input-bg) !important;
+        color: var(--text-main) !important;
+        border: 1.5px solid var(--border-input) !important;
+    }
 
-        .stTextInput input::placeholder,
-        .stTextArea textarea::placeholder {
-            color: #64748B !important;
-        }
+    /* Expanders */
+    [data-testid="stExpander"] {
+        background-color: var(--expander-bg) !important;
+        border: 1px solid var(--expander-border) !important;
+        border-radius: 8px !important;
+    }
+    [data-testid="stExpander"] summary,
+    [data-testid="stExpander"] p {
+        color: var(--text-sub) !important;
+    }
 
-        .stTextInput input:focus,
-        .stTextArea textarea:focus {
-            border-color: #0284C7 !important;
-            box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15) !important;
-        }
+    /* Tabs */
+    button[data-baseweb="tab"] {
+        color: var(--tab-text) !important;
+        font-weight: 700 !important;
+        font-size: 1rem !important;
+    }
+    button[data-baseweb="tab"][aria-selected="true"] {
+        color: var(--tab-active) !important;
+        border-bottom-color: var(--tab-active) !important;
+    }
+    [data-testid="stTabs"] { background-color: transparent !important; }
 
-        /* Input labels in Light Mode */
-        .stTextInput label,
-        .stTextArea label,
-        .stFileUploader label,
-        .stSelectbox label {
-            color: #0F172A !important;
-            font-weight: 700 !important;
-        }
+    /* Primary & Form Submit Buttons */
+    [data-testid="stFormSubmitButton"] button,
+    div.stFormSubmitButton > button,
+    button[kind="primary"], button[data-testid="baseButton-primary"] {
+        background-color: #0284C7 !important;
+        color: #FFFFFF !important;
+        border: none !important;
+        font-weight: 700 !important;
+        border-radius: 8px !important;
+        padding: 10px 16px !important;
+        width: 100% !important;
+        box-shadow: 0 2px 6px rgba(2, 132, 199, 0.2) !important;
+    }
+    [data-testid="stFormSubmitButton"] button:hover,
+    div.stFormSubmitButton > button:hover,
+    button[kind="primary"]:hover, button[data-testid="baseButton-primary"]:hover {
+        background-color: #0369A1 !important;
+        color: #FFFFFF !important;
+    }
 
-        /* ── File uploader dropzone in Light Mode ── */
-        [data-testid="stFileUploaderDropzone"] {
-            background-color: #FFFFFF !important;
-            border: 2px dashed #94A3B8 !important;
-            border-radius: 10px !important;
-        }
-        [data-testid="stFileUploaderDropzone"] p,
-        [data-testid="stFileUploaderDropzone"] span,
-        [data-testid="stFileUploaderDropzone"] small {
-            color: #334155 !important;
-            font-weight: 500 !important;
-        }
+    /* Secondary Buttons */
+    button[kind="secondary"], button[data-testid="baseButton-secondary"] {
+        background-color: var(--btn-sec-bg) !important;
+        color: var(--btn-sec-text) !important;
+        border: 1.5px solid var(--btn-sec-border) !important;
+        font-weight: 600 !important;
+    }
+    button[kind="secondary"]:hover, button[data-testid="baseButton-secondary"]:hover {
+        background-color: var(--btn-sec-hover-bg) !important;
+        color: var(--btn-sec-hover-text) !important;
+        border-color: var(--btn-sec-hover-border) !important;
+    }
 
-        /* ── Select / dropdown in Light Mode ── */
-        [data-baseweb="select"] > div {
-            background-color: #FFFFFF !important;
-            color: #0F172A !important;
-            border: 1.5px solid #94A3B8 !important;
-        }
+    /* Sidebar Navigation Buttons */
+    section[data-testid="stSidebar"] button[data-testid="baseButton-secondary"] {
+        background-color: var(--sidebar-btn-bg) !important;
+        color: var(--sidebar-btn-text) !important;
+        border: 1.5px solid var(--sidebar-btn-border) !important;
+        font-weight: 700 !important;
+    }
+    section[data-testid="stSidebar"] button[data-testid="baseButton-secondary"]:hover {
+        background-color: var(--sidebar-btn-hover-bg) !important;
+        color: var(--sidebar-btn-hover-text) !important;
+        border-color: var(--sidebar-btn-hover-border) !important;
+    }
 
-        /* ── Tabs in Light Mode ── */
-        button[data-baseweb="tab"] {
-            color: #475569 !important;
-            font-weight: 700 !important;
-            font-size: 1rem !important;
-        }
-        button[data-baseweb="tab"][aria-selected="true"] {
-            color: #0284C7 !important;
-            border-bottom-color: #0284C7 !important;
-        }
-        [data-testid="stTabs"] { background-color: transparent !important; }
+    /* Tags */
+    .tag { display: inline-block; padding: 5px 12px; border-radius: 9999px; font-size: 0.82rem; font-weight: 600; margin: 3px; }
+    .tag-matched { background: var(--tag-matched-bg); color: var(--tag-matched-text); border: 1px solid var(--tag-matched-border); }
+    .tag-missing { background: var(--tag-missing-bg); color: var(--tag-missing-text); border: 1px solid var(--tag-missing-border); }
+    .tag-section  { background: var(--tag-section-bg); color: var(--tag-section-text); border: 1px solid var(--tag-section-border); }
 
-        /* ── Primary & Form Submit Buttons in Light Mode ── */
-        [data-testid="stFormSubmitButton"] button,
-        div.stFormSubmitButton > button,
-        button[kind="primary"], button[data-testid="baseButton-primary"] {
-            background-color: #0284C7 !important;
-            color: #FFFFFF !important;
-            border: none !important;
-            font-weight: 700 !important;
-            border-radius: 8px !important;
-            padding: 10px 16px !important;
-            width: 100% !important;
-            box-shadow: 0 2px 6px rgba(2, 132, 199, 0.2) !important;
-        }
-        [data-testid="stFormSubmitButton"] button:hover,
-        div.stFormSubmitButton > button:hover,
-        button[kind="primary"]:hover, button[data-testid="baseButton-primary"]:hover {
-            background-color: #0369A1 !important;
-            color: #FFFFFF !important;
-        }
+    /* Score Circle */
+    .score-circle {
+        display: flex; align-items: center; justify-content: center;
+        width: 130px; height: 130px; border-radius: 50%;
+        margin: 0 auto 12px auto; font-size: 2rem; font-weight: 800;
+        box-shadow: inset 0 0 0 10px var(--circle-ring);
+    }
 
-        /* ── Secondary Buttons in Light Mode ── */
-        button[kind="secondary"], button[data-testid="baseButton-secondary"] {
-            background-color: #FFFFFF !important;
-            color: #0F172A !important;
-            border: 1.5px solid #CBD5E1 !important;
-            font-weight: 600 !important;
-        }
-        button[kind="secondary"]:hover, button[data-testid="baseButton-secondary"]:hover {
-            border-color: #0284C7 !important;
-            color: #0284C7 !important;
-            background-color: #EFF6FF !important;
-        }
+    /* Metric Cards */
+    .metric-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-card);
+        border-radius: 14px;
+        padding: 22px;
+        margin-bottom: 14px;
+        box-shadow: var(--shadow-card);
+        color: var(--text-main);
+    }
+    .metric-card:hover { }
+    .metric-card h4 { color: var(--text-heading) !important; margin-top: 0; }
+    .metric-card p  { color: var(--text-sub) !important; }
 
-        /* Sidebar Navigation Buttons in Light Mode */
-        section[data-testid="stSidebar"] button[data-testid="baseButton-secondary"] {
-            background-color: #F1F5F9 !important;
-            color: #0F172A !important;
-            border: 1.5px solid #CBD5E1 !important;
-            font-weight: 700 !important;
-        }
-        section[data-testid="stSidebar"] button[data-testid="baseButton-secondary"]:hover {
-            background-color: #E0F2FE !important;
-            border-color: #0284C7 !important;
-            color: #0284C7 !important;
-        }
+    /* Feedback Rows */
+    .feedback-item { padding: 7px 0; border-bottom: 1px solid var(--divider); }
 
-        hr { border-color: #E2E8F0 !important; }
-    </style>
-    """
+    /* Title styles */
+    .app-title { font-weight: 800; font-size: 2.2rem; margin-bottom: 6px; color: var(--text-heading); }
+    .app-subtitle { font-size: 1rem; color: var(--text-muted); margin-bottom: 24px; }
 
-st.markdown(_theme_css, unsafe_allow_html=True)
+    /* Alerts & Dividers */
+    [data-testid="stAlert"] {
+        background-color: var(--alert-bg) !important;
+        color: var(--alert-text) !important;
+        border: 1px solid var(--alert-border) !important;
+    }
+    hr { border-color: var(--divider) !important; }
+</style>
+""", unsafe_allow_html=True)
+
+components.html("""
+<script>
+(function() {
+    try {
+        var pDoc = window.parent.document;
+        var savedTheme = window.parent.localStorage.getItem('app_theme_preference') || 'light';
+        pDoc.documentElement.setAttribute('data-theme', savedTheme);
+        pDoc.body.setAttribute('data-theme', savedTheme);
+        var app = pDoc.querySelector('.stApp');
+        if (app) app.setAttribute('data-theme', savedTheme);
+        var sidebar = pDoc.querySelector('section[data-testid="stSidebar"]');
+        if (sidebar) sidebar.setAttribute('data-theme', savedTheme);
+    } catch(e) {}
+})();
+</script>
+""", height=0, width=0)
 
 # Logout function
 def handle_logout():
@@ -1016,13 +996,124 @@ def render_settings_page():
 
 # ----------------- APP ORCHESTRATOR -----------------
 if __name__ == "__main__":
-    # --- Always Render Theme Toggle in Sidebar ---
+    # --- Always Render Instant Zero-Delay Theme Toggle in Sidebar ---
     with st.sidebar:
         st.markdown("### 🌓 Application Theme")
-        dark_mode = st.toggle("🌙 Dark Mode Theme", value=st.session_state.dark_mode)
-        if dark_mode != st.session_state.dark_mode:
-            st.session_state.dark_mode = dark_mode
-            st.rerun()
+        components.html("""
+        <!DOCTYPE html>
+        <html>
+        <head>
+        <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', system-ui, sans-serif; }
+        body { background: transparent; overflow: hidden; }
+        .toggle-box {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 14px;
+            border-radius: 10px;
+            border: 1.5px solid #CBD5E1;
+            background-color: #FFFFFF;
+            cursor: pointer;
+            user-select: none;
+            height: 44px;
+        }
+        .toggle-label {
+            font-weight: 700;
+            font-size: 0.92rem;
+            color: #0F172A;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .switch-track {
+            position: relative;
+            width: 44px;
+            height: 22px;
+            border-radius: 22px;
+            background-color: #CBD5E1;
+            cursor: pointer;
+        }
+        .switch-knob {
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background-color: #FFFFFF;
+        }
+        </style>
+        </head>
+        <body>
+        <div id="toggleBox" class="toggle-box">
+            <span id="labelSpan" class="toggle-label">
+                <span id="themeIcon">☀️</span>
+                <span id="themeText">Light Mode</span>
+            </span>
+            <div class="switch-track" id="switchTrack">
+                <div class="switch-knob" id="switchKnob"></div>
+            </div>
+        </div>
+
+        <script>
+        (function() {
+            var box = document.getElementById('toggleBox');
+            var labelSpan = document.getElementById('labelSpan');
+            var icon = document.getElementById('themeIcon');
+            var text = document.getElementById('themeText');
+            var track = document.getElementById('switchTrack');
+            var knob = document.getElementById('switchKnob');
+
+            function applyTheme(isDark) {
+                var theme = isDark ? 'dark' : 'light';
+                try {
+                    var pDoc = window.parent.document;
+                    pDoc.documentElement.setAttribute('data-theme', theme);
+                    pDoc.body.setAttribute('data-theme', theme);
+                    var app = pDoc.querySelector('.stApp');
+                    if (app) app.setAttribute('data-theme', theme);
+                    var sidebar = pDoc.querySelector('section[data-testid="stSidebar"]');
+                    if (sidebar) sidebar.setAttribute('data-theme', theme);
+                    window.parent.localStorage.setItem('app_theme_preference', theme);
+                } catch(e) {}
+
+                if (isDark) {
+                    box.style.backgroundColor = '#1E293B';
+                    box.style.borderColor = '#334155';
+                    labelSpan.style.color = '#F1F5F9';
+                    icon.innerText = '🌙';
+                    text.innerText = 'Dark Mode';
+                    track.style.backgroundColor = '#0284C7';
+                    knob.style.left = '25px';
+                } else {
+                    box.style.backgroundColor = '#FFFFFF';
+                    box.style.borderColor = '#CBD5E1';
+                    labelSpan.style.color = '#0F172A';
+                    icon.innerText = '☀️';
+                    text.innerText = 'Light Mode';
+                    track.style.backgroundColor = '#CBD5E1';
+                    knob.style.left = '3px';
+                }
+            }
+
+            var isDark = false;
+            try {
+                var saved = window.parent.localStorage.getItem('app_theme_preference');
+                if (saved === 'dark') isDark = true;
+            } catch(e) {}
+
+            applyTheme(isDark);
+
+            box.addEventListener('click', function() {
+                isDark = !isDark;
+                applyTheme(isDark);
+            });
+        })();
+        </script>
+        </body>
+        </html>
+        """, height=52)
         st.markdown("---")
 
     if st.session_state.logged_in:
